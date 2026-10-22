@@ -31,7 +31,7 @@ require __DIR__ . '/partials/header.php';
                 </div>
             </div>
             <div class="hero-art">
-                <img src="<?= e(app_url('assets/img/blogforge-icon.png')) ?>" alt="BlogForge emblem">
+                <img src="/assets/img/blogforge-icon.png" alt="BlogForge emblem">
             </div>
         </div>
     </div>

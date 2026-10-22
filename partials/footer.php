@@ -2,7 +2,7 @@
 <footer class="site-footer">
     <div class="container footer-inner">
         <a class="brand" href="<?= e(app_url()) ?>">
-            <img src="<?= e(app_url('assets/img/blogforge-icon.png')) ?>" alt="BlogForge Logo">
+            <img src="/assets/img/blogforge-icon.png" alt="BlogForge Logo">
             <span><b>Blog</b><strong>Forge</strong></span>
         </a>
         <div class="footer-links">
@@ -16,6 +16,6 @@
 </footer>
 
 <div class="toast" data-toast></div>
-<script src="<?= e(app_url('assets/js/app.js')) ?>"></script>
+<script src="/assets/js/app.js"></script>
 </body>
 </html>

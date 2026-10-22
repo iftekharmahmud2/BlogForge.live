@@ -23,29 +23,40 @@ function envv(string $key, ?string $default = null): ?string
  */
 function app_url(string $path = ''): string
 {
-    $base = rtrim(envv('APP_URL', 'http://localhost:8000') ?? 'http://localhost:8000', '/');
+    $default = '';
+    if (!empty($_SERVER['HTTP_HOST'])) {
+        $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+                  (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+                  ? 'https' : 'http';
+        $default = $scheme . '://' . $_SERVER['HTTP_HOST'];
+    } else {
+        $default = 'http://localhost:8000';
+    }
+
+    $configured = envv('APP_URL');
+    $base = rtrim($configured !== null && $configured !== '' ? $configured : $default, '/');
     $path = ltrim($path, '/');
-    return $path !== '' ? $base . '/' . $path : $base;
+    return $path !== '' ? $base . '/' . $path : ($base !== '' ? $base : '/');
 }
 
 /**
  * Resolve a cover image URL: retains external HTTP/HTTPS URLs safely,
- * prefixes internal assets with app_url, and provides a default fallback.
+ * prefixes internal assets with root slash, and provides a default fallback.
  */
 function cover_url(?string $cover): string
 {
     $cover = trim((string)$cover);
     if ($cover === '') {
-        return app_url('assets/img/covers/ai.svg');
+        return '/assets/img/covers/ai.svg';
     }
 
     // If already absolute HTTP/HTTPS URL, sanitize and return directly
     if (preg_match('~^https?://~i', $cover)) {
-        return filter_var($cover, FILTER_VALIDATE_URL) ? $cover : app_url('assets/img/covers/ai.svg');
+        return filter_var($cover, FILTER_VALIDATE_URL) ? $cover : '/assets/img/covers/ai.svg';
     }
 
-    // Relative asset path
-    return app_url($cover);
+    // Relative asset path starting with root slash
+    return '/' . ltrim($cover, '/');
 }
 
 /**

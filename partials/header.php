@@ -11,8 +11,8 @@ $bodyClasses = trim((isset($postId) ? 'page-article ' : '') . ($isHome ? 'page-h
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($pageTitle) ?></title>
     <meta name="description" content="BlogForge.live — read, write and share meaningful stories.">
-    <link rel="icon" href="<?= e(app_url('assets/img/favicon.png')) ?>">
-    <link rel="stylesheet" href="<?= e(app_url('assets/css/style.css')) ?>">
+    <link rel="icon" href="/assets/img/favicon.png">
+    <link rel="stylesheet" href="/assets/css/style.css">
     <script>
         window.BLOGFORGE = {
             baseUrl: <?= json_encode(rtrim(app_url(), '/')) ?>,
@@ -25,7 +25,7 @@ $bodyClasses = trim((isset($postId) ? 'page-article ' : '') . ($isHome ? 'page-h
 <header class="site-header">
     <div class="container nav-wrap">
         <a class="brand" href="<?= e(app_url()) ?>">
-            <img src="<?= e(app_url('assets/img/blogforge-icon.png')) ?>" alt="BlogForge Logo">
+            <img src="/assets/img/blogforge-icon.png" alt="BlogForge Logo">
             <span><b>Blog</b><strong>Forge</strong></span>
         </a>
 

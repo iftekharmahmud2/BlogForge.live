@@ -1,4 +1,14 @@
+# Deny direct access to sensitive files and folders
 <FilesMatch "^(\.env.*|\.git.*|\.htaccess|composer\.(json|lock)|README\.md|bootstrap\.php|router\.php)$">
     Require all denied
 </FilesMatch>
 RedirectMatch 403 ^/(vendor|src|scripts|partials)(/|$)
+
+RewriteEngine On
+RewriteBase /
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^ index.php [QSA,L]
