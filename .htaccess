@@ -1,0 +1,4 @@
+<FilesMatch "^(\.env.*|\.git.*|\.htaccess|composer\.(json|lock)|README\.md|bootstrap\.php|router\.php)$">
+    Require all denied
+</FilesMatch>
+RedirectMatch 403 ^/(vendor|src|scripts|partials)(/|$)
