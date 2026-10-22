@@ -17,12 +17,13 @@ require dirname(__DIR__) . '/partials/header.php';
 <div class="admin-layout">
     <?php require __DIR__ . '/_nav.php'; ?>
     <section class="admin-main">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;">
+        <div class="admin-section-header" style="margin-top:0;margin-bottom:20px;">
             <h1 style="margin:0;">Posts (<?= count($posts) ?>)</h1>
             <a class="btn btn-primary btn-sm" href="<?= e(app_url('write.php')) ?>">+ New story</a>
         </div>
 
-        <table class="admin-table">
+        <div class="table-responsive">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>Title</th>
@@ -64,6 +65,7 @@ require dirname(__DIR__) . '/partials/header.php';
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </section>
 </div>
 

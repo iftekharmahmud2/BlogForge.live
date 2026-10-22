@@ -18,7 +18,8 @@ require dirname(__DIR__) . '/partials/header.php';
     <section class="admin-main">
         <h1>Comments Moderation (<?= count($comments) ?>)</h1>
 
-        <table class="admin-table">
+        <div class="table-responsive">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>Author</th>
@@ -61,6 +62,7 @@ require dirname(__DIR__) . '/partials/header.php';
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </section>
 </div>
 

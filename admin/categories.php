@@ -52,14 +52,15 @@ require dirname(__DIR__) . '/partials/header.php';
             </div>
         <?php endif; ?>
 
-        <form method="post" style="display:flex;gap:10px;max-width:520px;margin-bottom:25px">
+        <form method="post" style="display:flex;gap:10px;max-width:520px;margin-bottom:25px;flex-wrap:wrap;">
             <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="action" value="create">
-            <input class="input" name="name" placeholder="New category name (e.g. Design)" required>
-            <button class="btn btn-primary" type="submit">Add Category</button>
+            <input class="input" name="name" placeholder="New category name (e.g. Design)" required style="flex:1 1 200px;">
+            <button class="btn btn-primary" type="submit" style="white-space:nowrap;">Add Category</button>
         </form>
 
-        <table class="admin-table">
+        <div class="table-responsive">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>Category Name</th>
@@ -90,6 +91,7 @@ require dirname(__DIR__) . '/partials/header.php';
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </section>
 </div>
 

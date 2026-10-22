@@ -41,51 +41,53 @@ require dirname(__DIR__) . '/partials/header.php';
             <?php endforeach; ?>
         </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:40px;margin-bottom:15px;">
-            <h2 style="margin:0;">Recent posts</h2>
-            <a href="<?= e(app_url('admin/posts.php')) ?>" style="font-weight:600;font-size:14px;">Manage all posts →</a>
+        <div class="admin-section-header">
+            <h2>Recent posts</h2>
+            <a href="<?= e(app_url('admin/posts.php')) ?>">Manage all posts →</a>
         </div>
 
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Status</th>
-                    <th>Category</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($recent)): ?>
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
                     <tr>
-                        <td colspan="5" style="text-align:center;color:var(--muted);padding:30px;">No posts available yet.</td>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Status</th>
+                        <th>Category</th>
+                        <th>Actions</th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($recent as $p): ?>
+                </thead>
+                <tbody>
+                    <?php if (empty($recent)): ?>
                         <tr>
-                            <td>
-                                <b><?= e((string)$p['title']) ?></b>
-                            </td>
-                            <td><?= e((string)($p['author']['name'] ?? '')) ?></td>
-                            <td>
-                                <span class="status <?= ($p['status'] ?? '') === 'draft' ? 'draft' : 'approved' ?>">
-                                    <?= e((string)$p['status']) ?>
-                                </span>
-                            </td>
-                            <td><?= e((string)$p['category']) ?></td>
-                            <td>
-                                <div class="table-actions">
-                                    <a class="btn-table" href="<?= e(app_url('article.php?id=' . urlencode((string)($p['slug'] ?? $p['_id'])))) ?>">View</a>
-                                    <a class="btn-table" href="<?= e(app_url('write.php?id=' . urlencode((string)$p['_id']))) ?>">Edit</a>
-                                    <button class="btn-table btn-table-danger" data-delete-post="<?= e((string)$p['_id']) ?>" data-post-title="<?= e($p['title']) ?>">Delete</button>
-                                </div>
-                            </td>
+                            <td colspan="5" style="text-align:center;color:var(--muted);padding:30px;">No posts available yet.</td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    <?php else: ?>
+                        <?php foreach ($recent as $p): ?>
+                            <tr>
+                                <td>
+                                    <b><?= e((string)$p['title']) ?></b>
+                                </td>
+                                <td><?= e((string)($p['author']['name'] ?? '')) ?></td>
+                                <td>
+                                    <span class="status <?= ($p['status'] ?? '') === 'draft' ? 'draft' : 'approved' ?>">
+                                        <?= e((string)$p['status']) ?>
+                                    </span>
+                                </td>
+                                <td><?= e((string)$p['category']) ?></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a class="btn-table" href="<?= e(app_url('article.php?id=' . urlencode((string)($p['slug'] ?? $p['_id'])))) ?>">View</a>
+                                        <a class="btn-table" href="<?= e(app_url('write.php?id=' . urlencode((string)$p['_id']))) ?>">Edit</a>
+                                        <button class="btn-table btn-table-danger" data-delete-post="<?= e((string)$p['_id']) ?>" data-post-title="<?= e($p['title']) ?>">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </section>
 </div>
 
