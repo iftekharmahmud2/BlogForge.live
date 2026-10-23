@@ -1,0 +1,8 @@
+# Ensure accurate GitHub repository language usage & statistics
+assets/css/style.css linguist-generated=true
+assets/css/style.css linguist-vendored=true
+package-lock.json linguist-generated=true
+composer.lock linguist-generated=true
+
+# Recognize all application templates as PHP
+*.php linguist-language=PHP

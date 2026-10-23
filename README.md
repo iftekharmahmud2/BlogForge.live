@@ -1,26 +1,26 @@
 # BlogForge.live
 
-A complete Medium-inspired blogging platform starter built with **PHP 8.1+, MongoDB, HTML, CSS and vanilla JavaScript**. The UI uses the supplied BlogForge logo and is responsive across desktop and mobile.
+A modern Medium-inspired publishing platform built with **PHP 8.3+, MongoDB, Tailwind CSS v3, and vanilla JavaScript (ES6+)**. The UI is fully responsive across desktop and mobile devices.
 
 ## Included
 
-- Minimal cover homepage: logo, headline and call-to-action buttons only (no posts)
-- Explore/search/filter page
-- Focused article reading page with likes, bookmarks UI, share and comments
-- Email-only registration/sign-in. Sign-up asks for first name, last name, email, password, confirm password and Terms & Privacy agreement
-- Author profile with an **Edit profile** page (name, username, bio, photo URL, change password) and a distraction-free story editor
-- Draft/publish workflow, categories and tags
-- Author/admin roles
-- Admin overview, posts, comments and category management
-- MongoDB repositories, indexes, seed script and admin-account script
-- CSRF protection, password hashing and output escaping
+- Minimal cover homepage: logo, headline and call-to-action buttons
+- Explore, search, and topic filter page
+- Clean article reading view with likes, reading list bookmarks, share, and discussion comments
+- Email registration and sign-in with secure CSRF, password hashing, and input validation
+- Author profiles, edit profile management (name, username, bio, photo URL, change password), and distraction-free story editor
+- Draft & published editorial workflow, categories, and tags
+- Role-based moderation (Author & Admin)
+- Admin control room for posts, comments, categories, and metrics overview
+- Optimized MongoDB repositories with automatic index creation
+- Containerized Docker deployment with Apache rewrite rules and Tailwind build pipeline
 
 ## 1. Requirements
 
-- PHP 8.1 or newer
+- PHP 8.2 or PHP 8.3 (with `ext-mongodb`)
+- Node.js 22 LTS & npm
 - Composer
-- MongoDB server or MongoDB Atlas
-- PHP MongoDB extension (`ext-mongodb`)
+- MongoDB database (local or MongoDB Atlas cluster)
 
 ## 2. Install
 
