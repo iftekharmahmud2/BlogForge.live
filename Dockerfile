@@ -1,10 +1,18 @@
-FROM php:8.5-apache
+FROM php:8.2-apache
 
-# Install build tools, MongoDB driver prerequisites, git and unzip for composer
-RUN apt-get update && apt-get install -y libssl-dev pkg-config git unzip \
+# Install build tools, MongoDB driver prerequisites, git, unzip, and Node.js
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    pkg-config \
+    git \
+    unzip \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && pecl install mongodb \
     && docker-php-ext-enable mongodb \
-    && a2enmod rewrite
+    && a2enmod rewrite \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Configure Apache directory settings for /var/www/html/
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
@@ -19,5 +27,11 @@ WORKDIR /var/www/html/
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Build Tailwind CSS inside container to guarantee compiled stylesheet
+RUN npm install && npm run build:css
+
+# Set ownership to Apache user
+RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80

@@ -13,6 +13,32 @@ $bodyClasses = trim('bg-[#fffdfa] text-[#11151b] font-sans antialiased min-h-scr
     <meta name="description" content="BlogForge.live — read, write and share meaningful stories.">
     <link rel="icon" href="/assets/img/favicon.png">
     <link rel="stylesheet" href="/assets/css/style.css">
+    <!-- Immediate Tailwind CDN Fallback for Production Deployments -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#ff6b13',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            DEFAULT: '#ff6b13',
+                        },
+                        dark: {
+                            DEFAULT: '#0e1218',
+                            card: '#161a21',
+                            border: '#232936',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
     <script>
         window.BLOGFORGE = {
             baseUrl: <?= json_encode(rtrim(app_url(), '/')) ?>,
