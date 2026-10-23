@@ -72,55 +72,69 @@
         // ----------------------------------------------------
         // 1. Navigation & Dropdowns
         // ----------------------------------------------------
-        const accountMenuToggle = $('[data-menu-toggle]');
-        const accountMenu = $('[data-account-menu]');
-        if (accountMenuToggle && accountMenu) {
-            accountMenuToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                accountMenu.classList.toggle('hidden');
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!accountMenu.contains(e.target) && !accountMenuToggle.contains(e.target)) {
-                    accountMenu.classList.add('hidden');
-                }
-            });
-        }
-
-        const mobileToggle = $('[data-mobile-toggle]') || document.getElementById('mobile-toggle');
-        const mobileNav = $('[data-mobile-nav]') || document.getElementById('mobile-menu');
+        const accountMenuToggle = document.querySelector('[data-menu-toggle]');
+        const accountMenu = document.querySelector('[data-account-menu]');
+        const mobileToggle = document.querySelector('[data-mobile-toggle]') || document.getElementById('mobile-toggle');
+        const mobileNav = document.querySelector('[data-mobile-nav]') || document.getElementById('mobile-menu');
         const hamburgerIcon = document.getElementById('hamburger-icon');
         const closeIcon = document.getElementById('close-icon');
 
+        const closeMobileNav = () => {
+            if (mobileNav && !mobileNav.classList.contains('hidden')) {
+                mobileNav.classList.add('hidden');
+                mobileNav.classList.remove('flex');
+                if (mobileToggle) mobileToggle.setAttribute('aria-expanded', 'false');
+                if (hamburgerIcon) hamburgerIcon.classList.remove('hidden');
+                if (closeIcon) closeIcon.classList.add('hidden');
+            }
+        };
+
+        const closeAccountMenu = () => {
+            if (accountMenu && !accountMenu.classList.contains('hidden')) {
+                accountMenu.classList.add('hidden');
+            }
+        };
+
+        if (accountMenuToggle && accountMenu) {
+            accountMenuToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeMobileNav();
+                accountMenu.classList.toggle('hidden');
+            });
+        }
+
         if (mobileToggle && mobileNav) {
             mobileToggle.addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                const isOpen = !mobileNav.classList.contains('hidden');
-                if (isOpen) {
-                    mobileNav.classList.add('hidden');
-                    mobileNav.classList.remove('flex');
-                    mobileToggle.setAttribute('aria-expanded', 'false');
-                    if (hamburgerIcon) hamburgerIcon.classList.remove('hidden');
-                    if (closeIcon) closeIcon.classList.add('hidden');
-                } else {
+                closeAccountMenu();
+                const willOpen = mobileNav.classList.contains('hidden');
+                if (willOpen) {
                     mobileNav.classList.remove('hidden');
                     mobileNav.classList.add('flex');
                     mobileToggle.setAttribute('aria-expanded', 'true');
                     if (hamburgerIcon) hamburgerIcon.classList.add('hidden');
                     if (closeIcon) closeIcon.classList.remove('hidden');
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!mobileNav.contains(e.target) && !mobileToggle.contains(e.target) && !mobileNav.classList.contains('hidden')) {
-                    mobileNav.classList.add('hidden');
-                    mobileNav.classList.remove('flex');
-                    mobileToggle.setAttribute('aria-expanded', 'false');
-                    if (hamburgerIcon) hamburgerIcon.classList.remove('hidden');
-                    if (closeIcon) closeIcon.classList.add('hidden');
+                } else {
+                    closeMobileNav();
                 }
             });
         }
+
+        // Click outside closes both dropdowns
+        document.addEventListener('click', (e) => {
+            if (accountMenu && !accountMenu.classList.contains('hidden')) {
+                if (!accountMenu.contains(e.target) && !accountMenuToggle.contains(e.target)) {
+                    closeAccountMenu();
+                }
+            }
+            if (mobileNav && !mobileNav.classList.contains('hidden')) {
+                if (!mobileNav.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    closeMobileNav();
+                }
+            }
+        });
 
         // ----------------------------------------------------
         // 2. Bookmarks
