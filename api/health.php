@@ -31,3 +31,4 @@ json_response([
     'mongodb_target' => $safeUri,
     'error' => $lastError,
 ], $httpCode);
+

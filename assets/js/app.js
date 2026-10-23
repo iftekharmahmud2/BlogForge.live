@@ -93,7 +93,8 @@
         const closeIcon = document.getElementById('close-icon');
 
         if (mobileToggle && mobileNav) {
-            mobileToggle.addEventListener('click', () => {
+            mobileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const isOpen = !mobileNav.classList.contains('hidden');
                 if (isOpen) {
                     mobileNav.classList.add('hidden');
@@ -107,6 +108,16 @@
                     mobileToggle.setAttribute('aria-expanded', 'true');
                     if (hamburgerIcon) hamburgerIcon.classList.add('hidden');
                     if (closeIcon) closeIcon.classList.remove('hidden');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!mobileNav.contains(e.target) && !mobileToggle.contains(e.target) && !mobileNav.classList.contains('hidden')) {
+                    mobileNav.classList.add('hidden');
+                    mobileNav.classList.remove('flex');
+                    mobileToggle.setAttribute('aria-expanded', 'false');
+                    if (hamburgerIcon) hamburgerIcon.classList.remove('hidden');
+                    if (closeIcon) closeIcon.classList.add('hidden');
                 }
             });
         }

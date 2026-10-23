@@ -98,15 +98,15 @@ $bodyClasses = trim('bg-[#fffdfa] text-[#11151b] font-sans antialiased min-h-scr
             <?php endif; ?>
         </div>
 
-        <!-- Mobile Menu Toggle Button (Visible ONLY on < md) -->
-        <button id="mobile-toggle" class="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-[#ff6b13] hover:bg-orange-50/70 focus:outline-none transition" data-mobile-toggle aria-label="Toggle navigation menu" aria-expanded="false">
+        <!-- Menu Toggle Button (Visible on both mobile & desktop) -->
+        <button id="mobile-toggle" class="flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-[#ff6b13] hover:bg-orange-50/70 focus:outline-none transition cursor-pointer" data-mobile-toggle aria-label="Toggle navigation menu" aria-expanded="false">
             <svg id="hamburger-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             <svg id="close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
     </div>
 
-    <!-- Mobile Navigation Drawer (#mobile-menu, hidden on md+) -->
-    <div id="mobile-menu" class="hidden md:hidden border-t border-[#e9e5df] bg-[#fffdfa] px-4 pt-4 pb-6 flex-col gap-2" data-mobile-nav>
+    <!-- Navigation Drawer / Dropdown Panel (Accessible on both mobile & desktop) -->
+    <div id="mobile-menu" class="hidden border-t border-[#e9e5df] bg-[#fffdfa]/98 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-4 flex-col gap-2 shadow-lg" data-mobile-nav>
         <form class="flex items-center gap-2 bg-[#f4f2ee] rounded-full px-3.5 py-2 mb-2 text-sm" method="GET" action="<?= e(app_url('explore.php')) ?>">
             <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
             <input name="q" class="bg-transparent border-0 outline-none w-full text-sm placeholder-gray-500" placeholder="Search stories, topics…" value="<?= e(is_string($_GET['q'] ?? null) ? $_GET['q'] : '') ?>">
