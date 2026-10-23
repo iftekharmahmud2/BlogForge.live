@@ -251,7 +251,9 @@ final class Auth
     {
         $db = Database::connection();
         if (!$db) {
-            throw new \RuntimeException('Database is currently offline. Please try again shortly.');
+            $lastErr = Database::getLastError();
+            $hint = $lastErr ? ' (' . $lastErr . ')' : ' Please try again shortly.';
+            throw new \RuntimeException('Database is currently offline.' . $hint);
         }
         return $db;
     }

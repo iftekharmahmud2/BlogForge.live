@@ -26,17 +26,30 @@ final class Database
         self::$lastError = null;
 
         try {
-            $uri = self::resolveEnv('MONGODB_URI', 'mongodb://127.0.0.1:27017');
+            $rawUri = self::resolveEnv('MONGODB_URI', '');
+            $isDefault = false;
+
+            if ($rawUri === '') {
+                $rawUri = 'mongodb://127.0.0.1:27017';
+                $isDefault = true;
+            }
+
+            $uri = $rawUri;
             $name = self::resolveEnv('MONGODB_DATABASE', 'blogforge');
 
             if (str_contains($uri, '<db_password>')) {
-                throw new \RuntimeException('MONGODB_URI contains unreplaced placeholder <db_password>. Update your .env file with your actual Atlas password.');
+                throw new \RuntimeException('MONGODB_URI contains unreplaced placeholder <db_password>. Update environment variables with your actual Atlas password.');
+            }
+
+            $timeout = (int)self::resolveEnv('MONGODB_TIMEOUT', '10000');
+            if ($timeout < 1000) {
+                $timeout = 10000;
             }
 
             // UriOptions must be passed as the second argument, not driverOptions!
             $uriOptions = [
-                'serverSelectionTimeoutMS' => 2500,
-                'connectTimeoutMS' => 2500,
+                'serverSelectionTimeoutMS' => $timeout,
+                'connectTimeoutMS' => $timeout,
             ];
 
             // Driver-specific options in 3rd argument
@@ -50,8 +63,14 @@ final class Database
             self::$database = $client->selectDatabase($name);
         } catch (Throwable $e) {
             self::$database = null;
-            self::$lastError = $e->getMessage();
-            error_log('[BlogForge] MongoDB Connection Error: ' . $e->getMessage());
+            $errMsg = $e->getMessage();
+            if ($isDefault) {
+                $errMsg = 'MONGODB_URI environment variable is missing in Render dashboard (defaulted to 127.0.0.1). Details: ' . $errMsg;
+            } elseif (str_contains($errMsg, 'serverSelectionTimeoutMS')) {
+                $errMsg = 'Connection timed out (' . $timeout . 'ms). Check if MongoDB Atlas Network Access has 0.0.0.0/0 allowed. Details: ' . $errMsg;
+            }
+            self::$lastError = $errMsg;
+            error_log('[BlogForge] MongoDB Connection Error: ' . $errMsg);
         }
 
         return self::$database;
