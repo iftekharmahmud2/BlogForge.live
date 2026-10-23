@@ -1,0 +1,13 @@
+{
+  "name": "blogforge",
+  "version": "1.0.0",
+  "description": "BlogForge.live - modern publishing platform",
+  "scripts": {
+    "build:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/style.css --minify",
+    "watch:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/style.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}
+

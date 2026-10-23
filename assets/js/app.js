@@ -15,9 +15,13 @@
         const t = $('[data-toast]');
         if (!t) return;
         t.textContent = message;
-        t.classList.add('show');
+        t.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none');
+        t.classList.add('opacity-100', 'translate-y-0');
         clearTimeout(t._timer);
-        t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+        t._timer = setTimeout(() => {
+            t.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+            t.classList.remove('opacity-100', 'translate-y-0');
+        }, 2800);
     };
 
     // Global API Helper
@@ -73,21 +77,37 @@
         if (accountMenuToggle && accountMenu) {
             accountMenuToggle.addEventListener('click', (e) => {
                 e.stopPropagation();
-                accountMenu.classList.toggle('open');
+                accountMenu.classList.toggle('hidden');
             });
 
             document.addEventListener('click', (e) => {
                 if (!accountMenu.contains(e.target) && !accountMenuToggle.contains(e.target)) {
-                    accountMenu.classList.remove('open');
+                    accountMenu.classList.add('hidden');
                 }
             });
         }
 
-        const mobileToggle = $('[data-mobile-toggle]');
-        const mobileNav = $('[data-mobile-nav]');
+        const mobileToggle = $('[data-mobile-toggle]') || document.getElementById('mobile-toggle');
+        const mobileNav = $('[data-mobile-nav]') || document.getElementById('mobile-menu');
+        const hamburgerIcon = document.getElementById('hamburger-icon');
+        const closeIcon = document.getElementById('close-icon');
+
         if (mobileToggle && mobileNav) {
             mobileToggle.addEventListener('click', () => {
-                mobileNav.classList.toggle('open');
+                const isOpen = !mobileNav.classList.contains('hidden');
+                if (isOpen) {
+                    mobileNav.classList.add('hidden');
+                    mobileNav.classList.remove('flex');
+                    mobileToggle.setAttribute('aria-expanded', 'false');
+                    if (hamburgerIcon) hamburgerIcon.classList.remove('hidden');
+                    if (closeIcon) closeIcon.classList.add('hidden');
+                } else {
+                    mobileNav.classList.remove('hidden');
+                    mobileNav.classList.add('flex');
+                    mobileToggle.setAttribute('aria-expanded', 'true');
+                    if (hamburgerIcon) hamburgerIcon.classList.add('hidden');
+                    if (closeIcon) closeIcon.classList.remove('hidden');
+                }
             });
         }
 
@@ -101,6 +121,9 @@
                 } else {
                     btn.classList.toggle('active');
                     const isActive = btn.classList.contains('active');
+                    btn.classList.toggle('text-[#ff6b13]', isActive);
+                    btn.classList.toggle('bg-orange-50', isActive);
+                    btn.classList.toggle('border-orange-200', isActive);
                     btn.textContent = isActive ? '♥' : '♡';
                     toast(isActive ? 'Saved to reading list' : 'Removed from reading list');
                 }
@@ -130,6 +153,9 @@
                     const counter = btn.querySelector('span');
                     if (counter) counter.textContent = data.likes;
                     btn.classList.toggle('liked', data.liked);
+                    btn.classList.toggle('text-red-500', data.liked);
+                    btn.classList.toggle('bg-red-50', data.liked);
+                    btn.classList.toggle('border-red-200', data.liked);
                     toast(data.liked ? 'Story liked' : 'Like removed');
                 } catch (err) {
                     toast(err.message);
@@ -177,11 +203,11 @@
                     // Dynamic DOM update
                     if (commentsContainer && res.comment) {
                         const newComment = document.createElement('div');
-                        newComment.className = 'comment';
+                        newComment.className = 'py-5 space-y-1.5 border-b border-gray-100';
                         newComment.innerHTML = `
-                            <b>${escapeHtml(res.comment.author.name)}</b>
-                            <p>${escapeHtml(res.comment.body)}</p>
-                            <small>Just now</small>
+                            <b class="block text-sm font-semibold text-gray-900">${escapeHtml(res.comment.author.name)}</b>
+                            <p class="text-sm text-gray-700 leading-relaxed">${escapeHtml(res.comment.body)}</p>
+                            <small class="text-xs text-gray-400 block">Just now</small>
                         `;
                         commentsContainer.prepend(newComment);
 
@@ -370,13 +396,24 @@
         const showError = (box, message) => {
             if (!box) { toast(message); return; }
             box.textContent = message;
+            box.classList.remove('hidden');
             box.style.display = 'block';
         };
         const clearError = (box, form) => {
-            if (box) box.style.display = 'none';
-            if (form) $$('.invalid', form).forEach((el) => el.classList.remove('invalid'));
+            if (box) {
+                box.classList.add('hidden');
+                box.style.display = 'none';
+            }
+            if (form) $$('.invalid, [data-invalid]', form).forEach((el) => {
+                el.classList.remove('invalid', 'border-red-500', 'ring-2', 'ring-red-100');
+            });
         };
-        const markInvalid = (el) => { if (el) { el.classList.add('invalid'); el.focus(); } };
+        const markInvalid = (el) => {
+            if (el) {
+                el.classList.add('invalid', 'border-red-500', 'ring-2', 'ring-red-100');
+                el.focus();
+            }
+        };
 
         // ----------------------------------------------------
         // 9. Auth Form Handler (Email sign-in & registration)

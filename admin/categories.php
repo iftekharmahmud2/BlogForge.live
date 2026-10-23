@@ -41,56 +41,56 @@ $cats = $repo->all();
 require dirname(__DIR__) . '/partials/header.php';
 ?>
 
-<div class="admin-layout">
+<div class="flex flex-col md:flex-row min-h-[calc(100vh-73px)]">
     <?php require __DIR__ . '/_nav.php'; ?>
-    <section class="admin-main">
-        <h1>Categories</h1>
+    <section class="flex-1 p-4 sm:p-6 lg:p-10 min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-6">Categories</h1>
 
         <?php if ($message): ?>
-            <div style="padding:12px 16px;border-radius:10px;margin-bottom:20px;font-size:14px;background:<?= $messageType === 'error' ? '#fff0ed;color:#a53118;' : '#e8f7ed;color:#24703a;' ?>">
+            <div class="p-3.5 rounded-2xl mb-6 text-sm font-medium border <?= $messageType === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200' ?>">
                 <?= e($message) ?>
             </div>
         <?php endif; ?>
 
-        <form method="post" style="display:flex;gap:10px;max-width:520px;margin-bottom:25px;flex-wrap:wrap;">
+        <form method="post" class="flex flex-wrap items-center gap-2.5 max-w-lg mb-8">
             <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="action" value="create">
-            <input class="input" name="name" placeholder="New category name (e.g. Design)" required style="flex:1 1 200px;">
-            <button class="btn btn-primary" type="submit" style="white-space:nowrap;">Add Category</button>
+            <input class="flex-1 min-w-[200px] bg-white border border-[#e9e5df] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition shadow-sm" name="name" placeholder="New category name (e.g. Design)" required>
+            <button class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white px-5 py-2.5 text-xs font-semibold shadow-sm hover:shadow transition cursor-pointer shrink-0" type="submit">Add Category</button>
         </form>
 
-        <div class="table-responsive">
-            <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Category Name</th>
-                    <th>Slug</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($cats)): ?>
+        <div class="w-full overflow-x-auto border border-[#e9e5df] rounded-2xl bg-white shadow-sm max-w-3xl">
+            <table class="w-full min-w-[480px] text-left text-sm divide-y divide-[#e9e5df]">
+                <thead class="bg-[#fbfaf8] text-xs font-semibold text-gray-500 uppercase">
                     <tr>
-                        <td colspan="3" style="text-align:center;color:var(--muted);padding:30px;">No categories configured.</td>
+                        <th class="py-3 px-4">Category Name</th>
+                        <th class="py-3 px-4">Slug</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($cats as $c): ?>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <?php if (empty($cats)): ?>
                         <tr>
-                            <td><b><?= e((string)$c['name']) ?></b></td>
-                            <td><code><?= e((string)$c['slug']) ?></code></td>
-                            <td>
-                                <form method="post" style="display:inline;" onsubmit="return confirm('Remove category <?= e((string)$c['name']) ?>?');">
-                                    <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="slug" value="<?= e((string)$c['slug']) ?>">
-                                    <button class="btn-table btn-table-danger" type="submit">Delete</button>
-                                </form>
-                            </td>
+                            <td colspan="3" class="text-center text-gray-400 py-10">No categories configured.</td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    <?php else: ?>
+                        <?php foreach ($cats as $c): ?>
+                            <tr class="hover:bg-gray-50/50 transition">
+                                <td class="py-3.5 px-4 font-semibold text-gray-900"><?= e((string)$c['name']) ?></td>
+                                <td class="py-3.5 px-4 font-mono text-xs text-gray-500"><?= e((string)$c['slug']) ?></td>
+                                <td class="py-3.5 px-4 text-right">
+                                    <form method="post" class="inline" onsubmit="return confirm('Remove category <?= e((string)$c['name']) ?>?');">
+                                        <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="slug" value="<?= e((string)$c['slug']) ?>">
+                                        <button class="px-2.5 py-1 text-xs font-medium rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer" type="submit">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </section>
 </div>

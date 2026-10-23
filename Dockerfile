@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.5-apache
 
 # Install build tools, MongoDB driver prerequisites, git and unzip for composer
 RUN apt-get update && apt-get install -y libssl-dev pkg-config git unzip \
@@ -19,7 +19,5 @@ WORKDIR /var/www/html/
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-EXPOSE 80
 
 EXPOSE 80

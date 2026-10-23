@@ -17,75 +17,80 @@ $posts = $postRepo->forAuthor((string)$u['id'], 100);
 require __DIR__ . '/partials/header.php';
 ?>
 
-<section class="profile-head">
-    <div class="container profile-box">
-        <?php if ($avatarUrl !== ''): ?>
-            <img class="profile-avatar profile-avatar-img" src="<?= e($avatarUrl) ?>" alt="<?= e($u['name']) ?>">
-        <?php else: ?>
-            <div class="profile-avatar"><?= e(initials($u['name'])) ?></div>
-        <?php endif; ?>
-        <div>
-            <h1><?= e($u['name']) ?></h1>
-            <p>@<?= e($u['handle']) ?> · Author on BlogForge</p>
-            <?php if ($bio !== ''): ?>
-                <p class="profile-bio"><?= e($bio) ?></p>
-            <?php else: ?>
-                <p class="profile-bio profile-bio-empty">No bio yet — <a href="<?= e(app_url('profile-edit.php')) ?>">add one</a> so readers know who you are.</p>
-            <?php endif; ?>
-            <div class="profile-stats">
-                <b><?= count($posts) ?> stories</b>
-                <span>Role: <?= e(ucfirst($u['role'] ?? 'author')) ?></span>
+<section class="border-b border-[#e9e5df] bg-[#fbfaf8] py-12 sm:py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                <?php if ($avatarUrl !== ''): ?>
+                    <img class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-sm shrink-0 border-2 border-white ring-2 ring-orange-100" src="<?= e($avatarUrl) ?>" alt="<?= e($u['name']) ?>">
+                <?php else: ?>
+                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-2xl sm:text-3xl shrink-0 shadow-sm"><?= e(initials($u['name'])) ?></div>
+                <?php endif; ?>
+                <div>
+                    <h1 class="text-2xl sm:text-4xl font-extrabold text-gray-900 tracking-tight"><?= e($u['name']) ?></h1>
+                    <p class="text-sm text-gray-500 mt-1">@<?= e($u['handle']) ?> · Author on BlogForge</p>
+                    <?php if ($bio !== ''): ?>
+                        <p class="text-sm text-gray-700 mt-2.5 max-w-xl leading-relaxed"><?= e($bio) ?></p>
+                    <?php else: ?>
+                        <p class="text-sm text-gray-400 mt-2.5">No bio yet — <a href="<?= e(app_url('profile-edit.php')) ?>" class="text-[#ff6b13] font-medium hover:underline">add one</a> so readers know who you are.</p>
+                    <?php endif; ?>
+                    <div class="flex items-center gap-4 text-xs font-medium text-gray-500 mt-3">
+                        <b class="text-gray-900 font-semibold"><?= count($posts) ?> stories</b>
+                        <span>·</span>
+                        <span>Role: <?= e(ucfirst($u['role'] ?? 'author')) ?></span>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="profile-actions">
-            <a class="btn" href="<?= e(app_url('profile-edit.php')) ?>">Edit profile</a>
-            <a class="btn btn-primary" href="<?= e(app_url('write.php')) ?>">Write a story</a>
+            <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                <a class="flex-1 sm:flex-initial text-center rounded-full border border-gray-300 px-5 py-2.5 text-xs font-semibold text-gray-700 hover:border-gray-400 bg-white transition" href="<?= e(app_url('profile-edit.php')) ?>">Edit profile</a>
+                <a class="flex-1 sm:flex-initial text-center rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white px-5 py-2.5 text-xs font-semibold shadow-sm hover:shadow transition" href="<?= e(app_url('write.php')) ?>">Write a story</a>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="section">
-    <div class="container">
-        <div class="section-head">
-            <h2>Your stories & drafts</h2>
-        </div>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Your stories &amp; drafts</h2>
+    </div>
 
-        <?php if (empty($posts)): ?>
-            <div style="padding: 40px 0; color: var(--muted); background:#faf8f5; border-radius:16px; text-align:center;">
-                <h3>No stories created yet.</h3>
-                <p>Ready to share your voice with the world?</p>
-                <a class="btn btn-primary" href="<?= e(app_url('write.php')) ?>" style="margin-top:12px;">Start writing your first story</a>
-            </div>
-        <?php else: ?>
-            <div class="story-grid">
-                <?php foreach ($posts as $p): ?>
-                    <article class="story-card">
-                        <img class="story-cover" src="<?= e(cover_url($p['cover'] ?? null)) ?>" alt="<?= e($p['title']) ?>">
-                        <div class="story-body">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                <span class="tag"><?= e($p['category']) ?></span>
-                                <span class="status <?= ($p['status'] ?? '') === 'draft' ? 'draft' : 'approved' ?>">
-                                    <?= e(ucfirst((string)($p['status'] ?? 'draft'))) ?>
+    <?php if (empty($posts)): ?>
+        <div class="p-12 text-center bg-[#faf8f5] border border-[#e9e5df] rounded-3xl text-gray-500">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">No stories created yet.</h3>
+            <p class="text-sm mb-5">Ready to share your voice with the world?</p>
+            <a class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white px-6 py-2.5 text-sm font-semibold shadow-sm hover:shadow transition" href="<?= e(app_url('write.php')) ?>">Start writing your first story</a>
+        </div>
+    <?php else: ?>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <?php foreach ($posts as $p): ?>
+                <div class="bg-white border border-[#e9e5df] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group">
+                    <div>
+                        <div class="aspect-[16/10] overflow-hidden bg-gray-100">
+                            <img src="<?= e(cover_url($p['cover'] ?? null)) ?>" alt="<?= e($p['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        </div>
+                        <div class="p-5">
+                            <div class="flex items-center justify-between gap-2 mb-2">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-orange-50 text-orange-700"><?= e($p['category']) ?></span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium <?= ($p['status'] ?? '') === 'draft' ? 'bg-gray-100 text-gray-600' : 'bg-emerald-50 text-emerald-700' ?>">
+                                    <?= e((string)$p['status']) ?>
                                 </span>
                             </div>
-                            <h3><?= e((string)$p['title']) ?></h3>
-                            <p><?= e((string)$p['excerpt']) ?></p>
-                            <div class="meta" style="margin-bottom:12px;">
-                                <span><?= e(format_date($p['published_at'] ?? $p['created_at'] ?? time())) ?></span>
-                                <span>· <?= e((string)($p['read_time'] ?? 1)) ?> min read</span>
-                                <span>· ♥ <?= e((string)($p['likes'] ?? 0)) ?></span>
-                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-[#ff6b13] transition line-clamp-2 leading-snug mb-2"><?= e($p['title']) ?></h3>
+                            <p class="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-3"><?= e($p['excerpt']) ?></p>
+                            <span class="text-[11px] text-gray-400 block"><?= e(format_date($p['published_at'] ?? $p['created_at'] ?? time())) ?></span>
                         </div>
-                        <div class="story-card-actions">
-                            <a class="btn btn-sm btn-outline" href="<?= e(app_url('article.php?id=' . urlencode((string)($p['slug'] ?? $p['_id'])))) ?>">View</a>
-                            <a class="btn btn-sm btn-secondary" href="<?= e(app_url('write.php?id=' . urlencode((string)$p['_id']))) ?>">Edit</a>
-                            <button class="btn btn-sm btn-danger" data-delete-post="<?= e((string)$p['_id']) ?>" data-post-title="<?= e($p['title']) ?>">Delete</button>
+                    </div>
+                    <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between gap-2 bg-[#faf9f6]">
+                        <a href="<?= e(app_url('article.php?id=' . urlencode((string)($p['slug'] ?? $p['_id'])))) ?>" class="text-xs font-semibold text-gray-600 hover:text-gray-900">View</a>
+                        <div class="flex items-center gap-2">
+                            <a href="<?= e(app_url('write.php?id=' . urlencode((string)$p['_id']))) ?>" class="text-xs font-semibold text-[#ff6b13] hover:underline">Edit</a>
+                            <button class="text-xs font-semibold text-red-600 hover:underline cursor-pointer" data-delete-post="<?= e((string)$p['_id']) ?>" data-post-title="<?= e($p['title']) ?>">Delete</button>
                         </div>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 </section>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>

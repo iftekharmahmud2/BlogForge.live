@@ -94,7 +94,7 @@ APP_URL=https://BlogForge.live
 
 Recommended server settings:
 
-- PHP 8.2/8.3
+- PHP 8.5 or newer
 - HTTPS only
 - `display_errors=Off`
 - secure session cookies
