@@ -15,7 +15,7 @@ $safeNext = safe_next_url(isset($_GET['next']) && is_string($_GET['next']) ? $_G
 require __DIR__ . '/partials/header.php';
 ?>
 
-<section class="min-h-[calc(100vh-140px)] flex items-center justify-center px-4 py-12 bg-radial from-orange-50/50 via-[#fffdfa] to-[#fffdfa]">
+<section class="min-h-[calc(100vh-140px)] flex items-center justify-center px-4 py-12 bg-gradient-to-b from-orange-50/40 via-[#fffdfa] to-[#fffdfa]">
     <div class="w-full <?= $register ? 'max-w-lg' : 'max-w-md' ?> bg-white border border-[#e9e5df] rounded-3xl p-8 sm:p-10 shadow-xl transition-all">
         <div class="text-center mb-6">
             <img src="/assets/img/blogforge-icon.png" alt="BlogForge" class="w-14 h-14 mx-auto mb-3 object-contain">

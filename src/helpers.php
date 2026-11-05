@@ -305,6 +305,13 @@ function body_to_html(string $body): string
             continue;
         }
 
+        // H3 heading
+        if (str_starts_with($block, '### ')) {
+            $text = substr($block, 4);
+            $htmlParts[] = '<h3>' . e($text) . '</h3>';
+            continue;
+        }
+
         // Blockquote
         if (str_starts_with($block, '> ')) {
             $text = substr($block, 2);
@@ -321,8 +328,15 @@ function body_to_html(string $body): string
         // Bold: **text**
         $safe = preg_replace('/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $safe) ?? $safe;
 
-        // Italic: _text_
-        $safe = preg_replace('/_([^_]+)_/', '<em>$1</em>', $safe) ?? $safe;
+        // Italic: *text* or _text_
+        $safe = preg_replace('/(?<!\*)\*([^*]+)\*(?!\*)/', '<em>$1</em>', $safe) ?? $safe;
+        $safe = preg_replace('/(?<!_)_([^_]+)_(?!_)/', '<em>$1</em>', $safe) ?? $safe;
+
+        // Images: ![alt](https://...)
+        $safe = preg_replace('~!\[([^\]]*)\]\((https?://[^\s)]+)\)~i', '<img src="$2" alt="$1" class="rounded-2xl my-4 max-w-full shadow-sm">', $safe) ?? $safe;
+
+        // Links: [text](https://...)
+        $safe = preg_replace('~\[([^\]]+)\]\((https?://[^\s)]+)\)~i', '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#ff6b13] font-medium hover:underline">$1</a>', $safe) ?? $safe;
 
         $htmlParts[] = '<p>' . nl2br($safe) . '</p>';
     }
@@ -551,6 +565,8 @@ function find_post(string $key, bool $allowDrafts = false): ?array
     $orConditions = [['slug' => $key]];
     if ($o = oid($key)) {
         $orConditions[] = ['_id' => $o];
+    } else {
+        $orConditions[] = ['_id' => $key];
     }
 
     try {

@@ -13,7 +13,7 @@ if (!is_file($root . '/.env')) {
     echo "  BlogForge MongoDB Diagnostic Check\n";
     echo "=========================================\n";
     echo "[-] Project .env file: MISSING\n";
-    echo "    Fix: Create .env inside blogforge-site by copying .env.example\n";
+    echo "    Fix: Create .env in project root by copying .env.example\n";
     exit(1);
 }
 
@@ -48,7 +48,7 @@ if (!$extensionLoaded) {
 $autoloadFound = is_file($root . '/vendor/autoload.php');
 echo $autoloadFound ? "[+] Composer autoload: FOUND\n" : "[-] Composer autoload: MISSING\n";
 if (!$autoloadFound) {
-    echo "    Fix: Run 'composer install' inside the blogforge-site folder.\n";
+    echo "    Fix: Run 'composer install' in the project root directory.\n";
     exit(1);
 }
 

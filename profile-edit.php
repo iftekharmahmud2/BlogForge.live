@@ -57,15 +57,18 @@ require __DIR__ . '/partials/header.php';
                 <label for="handle" class="block text-xs font-semibold text-gray-700 mb-1.5">Username</label>
                 <div class="flex items-center border border-[#e9e5df] rounded-xl bg-[#fbfaf8] focus-within:border-[#ff9a3c] focus-within:ring-2 focus-within:ring-orange-100 transition overflow-hidden">
                     <span class="pl-3.5 pr-1 text-gray-400 text-sm font-medium">@</span>
-                    <input class="w-full bg-transparent border-0 outline-none px-2 py-2.5 text-sm" id="handle" name="handle" required minlength="3" maxlength="30" pattern="^[a-zA-Z0-9_\.]+$" autocomplete="username" value="<?= e((string)($u['handle'] ?? '')) ?>">
+                    <input class="w-full bg-transparent border-0 outline-none px-2 py-2.5 text-sm" id="handle" name="handle" required minlength="3" maxlength="30" pattern="^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$" autocomplete="username" value="<?= e((string)($u['handle'] ?? '')) ?>">
                 </div>
-                <small class="block text-[11px] text-gray-400 mt-1">Letters, numbers, underscores and dots. 3–30 chars.</small>
+                <small class="block text-[11px] text-gray-400 mt-1">Letters, numbers, dashes, and underscores. 3–30 chars.</small>
             </div>
 
             <div>
-                <label for="bio" class="block text-xs font-semibold text-gray-700 mb-1.5">Bio <span class="text-gray-400 font-normal">(optional)</span></label>
-                <textarea class="w-full bg-[#fbfaf8] border border-[#e9e5df] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition resize-y min-h-[90px]" id="bio" name="bio" maxlength="280" placeholder="A sentence or two about what you write about…"><?= e((string)($u['bio'] ?? '')) ?></textarea>
-                <small class="block text-[11px] text-gray-400 mt-1">Short bio shown on your stories and public profile. Max 280 characters.</small>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="bio" class="block text-xs font-semibold text-gray-700">Bio <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <span class="text-[11px] text-gray-400"><span data-bio-count>0</span>/280</span>
+                </div>
+                <textarea class="w-full bg-[#fbfaf8] border border-[#e9e5df] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition resize-y min-h-[90px]" id="bio" name="bio" data-bio maxlength="280" placeholder="A sentence or two about what you write about…"><?= e((string)($u['bio'] ?? '')) ?></textarea>
+                <small class="block text-[11px] text-gray-400 mt-1">Short bio shown on your stories and public profile.</small>
             </div>
 
             <div>

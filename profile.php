@@ -63,7 +63,7 @@ require __DIR__ . '/partials/header.php';
     <?php else: ?>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <?php foreach ($posts as $p): ?>
-                <div class="bg-white border border-[#e9e5df] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group">
+                <div data-post-card class="bg-white border border-[#e9e5df] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group">
                     <div>
                         <div class="aspect-[16/10] overflow-hidden bg-gray-100">
                             <img src="<?= e(cover_url($p['cover'] ?? null)) ?>" alt="<?= e($p['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">

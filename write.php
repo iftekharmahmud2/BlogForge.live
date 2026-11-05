@@ -66,9 +66,9 @@ require __DIR__ . '/partials/header.php';
                     <button type="button" data-format="### " title="Heading 3" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-[#ff6b13] text-gray-700 font-bold text-xs flex items-center justify-center transition">H3</button>
                     <button type="button" data-format="> " title="Quote" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-[#ff6b13] text-gray-700 font-serif text-xs flex items-center justify-center transition">“</button>
                     <button type="button" data-format="`" title="Code" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-[#ff6b13] text-gray-700 font-mono text-xs flex items-center justify-center transition">&lt;&gt;</button>
-                    <button type="button" data-format="[link](https://)" title="Link" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-[#ff6b13] text-gray-700 text-xs flex items-center justify-center transition">🔗</button>
+                    <button type="button" data-insert-link title="Insert Link" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-[#ff6b13] text-gray-700 text-xs flex items-center justify-center transition">🔗</button>
                     <button type="button" data-insert-image title="Add Image" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-[#ff6b13] text-gray-700 text-xs flex items-center justify-center transition">🖼</button>
-                    <button type="button" data-clear-format title="Clear" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-700 text-xs flex items-center justify-center transition ml-auto">✕</button>
+                    <button type="button" data-clear-format title="Clear Formatting" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-700 text-xs flex items-center justify-center transition ml-auto">✕</button>
                 </div>
 
                 <!-- Textarea -->

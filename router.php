@@ -10,7 +10,7 @@ if (
     str_contains($path, "\0") ||
     preg_match('~(^|/)\.(?!well-known(?:/|$))~', $path) ||
     preg_match('~^/(?:vendor|src|scripts|partials)(?:/|$)~i', $path) ||
-    preg_match('~^/(?:composer\.(?:json|lock)|README\.md|bootstrap\.php|router\.php|\.htaccess|\.env.*)$~i', $path)
+    preg_match('~^/(?:composer\.(?:json|lock)|package(?:-lock)?\.json|tailwind\.config\.js|Dockerfile|\.nvmrc|README\.md|bootstrap\.php|router\.php|\.htaccess|\.env.*)$~i', $path)
 ) {
     http_response_code(404);
     header('Content-Type: text/plain; charset=UTF-8');

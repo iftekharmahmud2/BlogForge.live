@@ -1,5 +1,5 @@
 # Deny direct access to sensitive files and folders
-<FilesMatch "^(\.env.*|\.git.*|\.htaccess|composer\.(json|lock)|README\.md|bootstrap\.php|router\.php)$">
+<FilesMatch "^(\.env.*|\.git.*|\.htaccess|composer\.(json|lock)|package(-lock)?\.json|tailwind\.config\.js|Dockerfile|\.nvmrc|README\.md|bootstrap\.php|router\.php)$">
     Require all denied
 </FilesMatch>
 RedirectMatch 403 ^/(vendor|src|scripts|partials)(/|$)

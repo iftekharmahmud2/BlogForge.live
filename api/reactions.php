@@ -55,17 +55,16 @@ if ($existing) {
 
 $likes = 0;
 $oid = oid($postId);
-if ($oid) {
-    $inc = $liked ? 1 : -1;
-    $db->posts->updateOne(['_id' => $oid], ['$inc' => ['likes' => $inc]]);
-    
-    // Ensure likes never fall below zero
-    $db->posts->updateOne(['_id' => $oid, 'likes' => ['$lt' => 0]], ['$set' => ['likes' => 0]]);
-    
-    $post = $db->posts->findOne(['_id' => $oid]);
+$postFilter = $oid ? ['_id' => $oid] : ['_id' => $postId];
+$inc = $liked ? 1 : -1;
+
+$db->posts->updateOne($postFilter, ['$inc' => ['likes' => $inc]]);
+$db->posts->updateOne(array_merge($postFilter, ['likes' => ['$lt' => 0]]), ['$set' => ['likes' => 0]]);
+
+$post = $db->posts->findOne($postFilter);
+if ($post) {
     $likes = max(0, (int)($post['likes'] ?? 0));
 } else {
-    // For non-ObjectId demo or string IDs
     $likes = $db->reactions->countDocuments(['post_id' => $postId, 'type' => 'like']);
 }
 

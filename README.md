@@ -71,9 +71,7 @@ Every email signup receives the `author` role. The CLI command above creates or 
 
 ## 4. Run locally
 
-On Windows, extract the entire ZIP and double-click `START_BLOGFORGE.bat` in the outer folder.
-
-For a manual local start, run from `blogforge-site`:
+To start the local development server, run from the project root:
 
 ```bash
 php -S localhost:8000 -t . router.php
@@ -81,7 +79,13 @@ php -S localhost:8000 -t . router.php
 
 Open `http://localhost:8000`. The router blocks direct access to private configuration files. Do not start the built-in server without the router while `.env` is in the document root.
 
-To troubleshoot database connectivity, run `CHECK_CONNECTION.bat` in the outer folder. It checks `.env`, the MongoDB PHP extension, Composer dependencies, and the Atlas ping without printing your password.
+To troubleshoot database connectivity, run:
+
+```bash
+php scripts/check_connection.php
+```
+
+It checks `.env`, the MongoDB PHP extension, Composer dependencies, and the Atlas ping without exposing your credentials.
 
 ## 5. Production deployment for BlogForge.live
 
@@ -89,12 +93,12 @@ Point the web root at this project folder, enable HTTPS, run `composer install -
 
 ```env
 APP_ENV=production
-APP_URL=https://BlogForge.live
+APP_URL=https://blogforge.live
 ```
 
 Recommended server settings:
 
-- PHP 8.5 or newer
+- PHP 8.3 or newer
 - HTTPS only
 - `display_errors=Off`
 - secure session cookies

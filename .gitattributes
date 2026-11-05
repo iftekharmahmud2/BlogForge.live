@@ -6,3 +6,4 @@ composer.lock linguist-generated=true
 
 # Recognize all application templates as PHP
 *.php linguist-language=PHP
+

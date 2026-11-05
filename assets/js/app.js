@@ -254,7 +254,7 @@
         if (editor) {
             const textarea = $('[name=body]', editor);
 
-            // Formatting toolbar
+            // Formatting toolbar (inline and block marks)
             $$('[data-format]').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     if (!textarea) return;
@@ -265,17 +265,71 @@
 
                     // Block formats: Heading and Blockquote
                     if (mark.endsWith(' ')) {
-                        // Prepend prefix to lines
                         const lines = (sel || 'Text').split('\n');
                         const formatted = lines.map(l => mark + l).join('\n');
                         textarea.setRangeText(formatted, start, end, 'end');
                     } else {
-                        // Inline wrap: **bold**, _italic_, `code`
+                        // Inline wrap: **bold**, *italic*, `code`
                         textarea.setRangeText(mark + (sel || 'text') + mark, start, end, 'end');
                     }
                     textarea.focus();
                 });
             });
+
+            // Insert Link
+            const linkBtn = $('[data-insert-link]', editor);
+            if (linkBtn) {
+                linkBtn.addEventListener('click', () => {
+                    if (!textarea) return;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const sel = textarea.value.substring(start, end) || 'link text';
+                    const url = prompt('Enter URL (https://...):', 'https://');
+                    if (url && url.trim() !== '' && url !== 'https://') {
+                        textarea.setRangeText(`[${sel}](${url.trim()})`, start, end, 'end');
+                        textarea.focus();
+                    }
+                });
+            }
+
+            // Insert Image
+            const imgBtn = $('[data-insert-image]', editor);
+            if (imgBtn) {
+                imgBtn.addEventListener('click', () => {
+                    if (!textarea) return;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const alt = textarea.value.substring(start, end) || 'Image description';
+                    const url = prompt('Enter image URL (https://...):', 'https://');
+                    if (url && url.trim() !== '' && url !== 'https://') {
+                        textarea.setRangeText(`![${alt}](${url.trim()})\n`, start, end, 'end');
+                        textarea.focus();
+                    }
+                });
+            }
+
+            // Clear Formatting
+            const clearBtn = $('[data-clear-format]', editor);
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    if (!textarea) return;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const sel = textarea.value.substring(start, end);
+                    if (!sel) return;
+                    const cleaned = sel
+                        .replace(/^(\s*#{1,6}\s+)/gm, '')
+                        .replace(/^(\s*>\s*)/gm, '')
+                        .replace(/\*\*([^*]+)\*\*/g, '$1')
+                        .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '$1')
+                        .replace(/(?<!_)_([^_]+)_(?!_)/g, '$1')
+                        .replace(/`([^`]+)`/g, '$1')
+                        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                        .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1');
+                    textarea.setRangeText(cleaned, start, end, 'end');
+                    textarea.focus();
+                });
+            }
 
             // Form submission
             editor.addEventListener('submit', async (e) => {
@@ -347,7 +401,7 @@
                         }, 500);
                     } else {
                         // Dynamically remove card/row from DOM
-                        const targetElement = btn.closest('.story-card, .admin-table tr, .explore-row');
+                        const targetElement = btn.closest('[data-post-card], tr, article, .story-card, .admin-table tr, .explore-row');
                         if (targetElement) {
                             targetElement.style.opacity = '0';
                             targetElement.style.transition = 'opacity 0.3s ease';
@@ -388,10 +442,13 @@
                             method: 'POST',
                             body: { id: commentId, status: action },
                         });
-                        const statusBadge = btn.closest('tr')?.querySelector('.status');
+                        const statusBadge = btn.closest('tr')?.querySelector('[data-comment-status-badge], .status');
                         if (statusBadge) {
                             statusBadge.textContent = action;
-                            statusBadge.className = 'status ' + action;
+                            const badgeColor = action === 'approved' 
+                                ? 'bg-emerald-50 text-emerald-700' 
+                                : (action === 'spam' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700');
+                            statusBadge.className = `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${badgeColor}`;
                         }
                         toast(`Comment marked as ${action}.`);
                     }

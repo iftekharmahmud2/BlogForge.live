@@ -53,7 +53,7 @@ require dirname(__DIR__) . '/partials/header.php';
                                         default => 'bg-amber-50 text-amber-700',
                                     };
                                     ?>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize <?= $badgeClass ?>">
+                                    <span data-comment-status-badge class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize <?= $badgeClass ?>">
                                         <?= e($status) ?>
                                     </span>
                                 </td>
