@@ -122,7 +122,9 @@ Recommended server settings:
 - `write.php` — author editor
 - `profile.php` — author profile
 - `profile-edit.php` — edit profile & change password (API: `api/profile.php`)
-- `terms.php` — Terms of Service & Privacy Policy
+- `terms.php` — Terms & Conditions
+- `privacy.php` — Privacy Policy
+- `cookies.php` — Cookie Policy
 - `admin/` — admin UI
 - `api/` — JSON/auth endpoints
 - `src/` — database/auth/repositories/helpers

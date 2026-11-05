@@ -10,39 +10,38 @@ $user = current_user();
 require __DIR__ . '/partials/header.php';
 ?>
 
-<section class="py-10 sm:py-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="relative overflow-hidden rounded-3xl bg-neutral-950 text-white shadow-2xl border border-neutral-800">
-            <!-- Subtle background accent glow -->
-            <div class="absolute -top-24 -right-24 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+<section class="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-neutral-950 text-white overflow-hidden w-full px-4 sm:px-8 lg:px-16 py-12 lg:py-20">
+    <!-- Subtle ambient glow matching the image backdrop -->
+    <div class="absolute -top-36 -right-36 w-[34rem] h-[34rem] bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-36 -left-36 w-[30rem] h-[30rem] bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 items-center relative z-10">
-                <div class="lg:col-span-7 p-8 sm:p-12 lg:p-16">
-                    <span class="inline-block uppercase tracking-widest text-xs font-bold text-orange-400 mb-3">BlogForge.live</span>
-                    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6 text-white">
-                        Ideas<br>into <em class="not-italic text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">Impact.</em>
-                    </h1>
-                    <p class="text-base sm:text-lg text-neutral-400 max-w-xl leading-relaxed mb-8">
-                        A home for curious minds, bold ideas, and meaningful stories. Read, write, and be part of a growing community of thinkers.
-                    </p>
+    <div class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 items-center gap-10 lg:gap-14 relative z-10">
+        <!-- Hero Text & CTAs (Left) -->
+        <div class="lg:col-span-7 flex flex-col items-start text-left">
+            <span class="inline-block uppercase tracking-widest text-xs font-bold text-orange-400 mb-4">BlogForge.live</span>
+            <h1 class="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight leading-[1.08] mb-6 text-white">
+                Ideas<br>into <span class="text-[#ff7b22]">Impact.</span>
+            </h1>
+            <p class="text-base sm:text-xl text-neutral-400 max-w-xl leading-relaxed mb-10 font-normal">
+                A home for curious minds, bold ideas, and meaningful stories. Read, write, and be part of a growing community of thinkers.
+            </p>
 
-                    <div class="flex flex-wrap items-center gap-3">
-                        <?php if ($user): ?>
-                            <a class="inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-amber-600 text-white font-medium px-6 py-3 rounded-xl shadow-lg hover:brightness-110 hover:scale-[1.02] transition" href="<?= e(app_url('explore.php')) ?>">Start reading →</a>
-                            <a class="inline-flex items-center justify-center bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-medium px-6 py-3 rounded-xl transition" href="<?= e(app_url('write.php')) ?>">Write a story</a>
-                            <a class="inline-flex items-center justify-center text-neutral-400 hover:text-white font-medium px-4 py-3 transition" href="<?= e(app_url('profile.php')) ?>">My profile</a>
-                        <?php else: ?>
-                            <a class="inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-amber-600 text-white font-medium px-6 py-3 rounded-xl shadow-lg hover:brightness-110 hover:scale-[1.02] transition" href="<?= e(app_url('auth.php?mode=register')) ?>">Get started →</a>
-                            <a class="inline-flex items-center justify-center bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-medium px-6 py-3 rounded-xl transition" href="<?= e(app_url('auth.php')) ?>">Sign in</a>
-                            <a class="inline-flex items-center justify-center text-neutral-400 hover:text-white font-medium px-4 py-3 transition" href="<?= e(app_url('explore.php')) ?>">Browse stories</a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-5 p-8 lg:p-12 flex items-center justify-center">
-                    <img src="/assets/img/blogforge-icon.png" alt="BlogForge emblem" class="w-48 sm:w-64 lg:w-80 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.5)]">
-                </div>
+            <div class="flex flex-wrap items-center gap-3.5">
+                <?php if ($user): ?>
+                    <a class="inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-xl shadow-lg hover:brightness-110 hover:scale-[1.02] transition" href="<?= e(app_url('explore.php')) ?>">Start reading →</a>
+                    <a class="inline-flex items-center justify-center bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 font-medium text-sm sm:text-base px-6 py-3.5 rounded-xl transition" href="<?= e(app_url('write.php')) ?>">Write a story</a>
+                    <a class="inline-flex items-center justify-center text-neutral-400 hover:text-white font-medium text-sm sm:text-base px-4 py-3.5 transition" href="<?= e(app_url('profile.php')) ?>">My profile</a>
+                <?php else: ?>
+                    <a class="inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-xl shadow-lg hover:brightness-110 hover:scale-[1.02] transition" href="<?= e(app_url('auth.php?mode=register')) ?>">Get started →</a>
+                    <a class="inline-flex items-center justify-center bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 font-medium text-sm sm:text-base px-6 py-3.5 rounded-xl transition" href="<?= e(app_url('auth.php')) ?>">Sign in</a>
+                    <a class="inline-flex items-center justify-center text-neutral-400 hover:text-white font-medium text-sm sm:text-base px-4 py-3.5 transition" href="<?= e(app_url('explore.php')) ?>">Browse stories</a>
+                <?php endif; ?>
             </div>
+        </div>
+
+        <!-- 3D Logo Emblem (Right) -->
+        <div class="lg:col-span-5 flex items-center justify-center lg:justify-end">
+            <img src="/assets/img/blogforge-icon.png" alt="BlogForge emblem" class="w-64 sm:w-80 lg:w-[26rem] max-w-full object-contain drop-shadow-[0_30px_45px_rgba(0,0,0,0.7)] select-none">
         </div>
     </div>
 </section>

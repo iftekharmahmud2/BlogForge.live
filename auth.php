@@ -63,7 +63,7 @@ require __DIR__ . '/partials/header.php';
 
                 <label class="flex items-start gap-2.5 text-xs text-gray-600 cursor-pointer pt-1">
                     <input type="checkbox" name="terms" class="w-4 h-4 rounded text-[#ff6b13] focus:ring-[#ff6b13] mt-0.5" required>
-                    <span>I agree to the <a href="<?= e(app_url('terms.php#terms')) ?>" target="_blank" rel="noopener" class="text-[#ff6b13] font-semibold hover:underline">Terms of Service</a> and <a href="<?= e(app_url('terms.php#privacy')) ?>" target="_blank" rel="noopener" class="text-[#ff6b13] font-semibold hover:underline">Privacy Policy</a>.</span>
+                    <span>I agree to the <a href="<?= e(app_url('terms.php')) ?>" target="_blank" rel="noopener" class="text-[#ff6b13] font-semibold hover:underline">Terms &amp; Conditions</a>, <a href="<?= e(app_url('privacy.php')) ?>" target="_blank" rel="noopener" class="text-[#ff6b13] font-semibold hover:underline">Privacy Policy</a>, and <a href="<?= e(app_url('cookies.php')) ?>" target="_blank" rel="noopener" class="text-[#ff6b13] font-semibold hover:underline">Cookie Policy</a>.</span>
                 </label>
             <?php endif; ?>
 
