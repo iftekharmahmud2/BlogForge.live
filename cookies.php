@@ -131,3 +131,4 @@ require __DIR__ . '/partials/header.php';
 </section>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
+

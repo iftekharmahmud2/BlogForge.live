@@ -55,8 +55,14 @@ function cover_url(?string $cover): string
         return filter_var($cover, FILTER_VALIDATE_URL) ? $cover : '/assets/img/covers/ai.svg';
     }
 
+    // Block directory traversal or invalid characters in relative paths
+    $clean = ltrim($cover, '/');
+    if (str_contains($clean, '..') || !preg_match('~^[a-zA-Z0-9_\-\/\.]+$~', $clean)) {
+        return '/assets/img/covers/ai.svg';
+    }
+
     // Relative asset path starting with root slash
-    return '/' . ltrim($cover, '/');
+    return '/' . $clean;
 }
 
 /**
@@ -76,19 +82,116 @@ function db(): ?\MongoDB\Database
 }
 
 /**
- * Apply Cross-Origin Resource Sharing (CORS) headers and handle preflight OPTIONS.
+ * Get client IP address accurately and securely.
+ */
+function get_client_ip(): string
+{
+    $headers = [
+        'HTTP_CF_CONNECTING_IP',
+        'HTTP_X_FORWARDED_FOR',
+        'HTTP_X_REAL_IP',
+        'REMOTE_ADDR'
+    ];
+
+    foreach ($headers as $header) {
+        if (!empty($_SERVER[$header])) {
+            $ipList = explode(',', (string)$_SERVER[$header]);
+            $ip = trim($ipList[0]);
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
+    }
+
+    return '127.0.0.1';
+}
+
+/**
+ * Check rate limit for an action. Emits HTTP 429 if the request limit is exceeded.
+ */
+function check_rate_limit(string $action, int $maxAttempts = 60, int $decaySeconds = 60): void
+{
+    $ip = get_client_ip();
+    $now = time();
+    $db = db();
+
+    // MongoDB-backed rate limit tracking (persists across sessions & prevents cookie tampering)
+    if ($db) {
+        try {
+            $cutoff = new UTCDateTime(($now - $decaySeconds) * 1000);
+            $filter = [
+                'ip' => $ip,
+                'action' => $action,
+                'created_at' => ['$gte' => $cutoff]
+            ];
+            $count = $db->rate_limits->countDocuments($filter);
+
+            if ($count >= $maxAttempts) {
+                header('Retry-After: ' . $decaySeconds);
+                http_response_code(429);
+                json_response([
+                    'error' => 'Too many requests. Please slow down and try again later.'
+                ], 429);
+            }
+
+            $db->rate_limits->insertOne([
+                'ip' => $ip,
+                'action' => $action,
+                'created_at' => new UTCDateTime($now * 1000),
+            ]);
+            return;
+        } catch (\Throwable) {
+            // Fall back to session-based rate limiting if DB query fails
+        }
+    }
+
+    // In-session fallback
+    $key = 'rl_' . md5($action . ':' . $ip);
+    if (!isset($_SESSION[$key]) || !is_array($_SESSION[$key]) || $now > ($_SESSION[$key]['expires'] ?? 0)) {
+        $_SESSION[$key] = ['count' => 1, 'expires' => $now + $decaySeconds];
+        return;
+    }
+
+    $_SESSION[$key]['count']++;
+    if ($_SESSION[$key]['count'] > $maxAttempts) {
+        $retryAfter = max(1, (int)$_SESSION[$key]['expires'] - $now);
+        header('Retry-After: ' . $retryAfter);
+        http_response_code(429);
+        json_response([
+            'error' => 'Too many requests. Please wait ' . $retryAfter . ' seconds before trying again.'
+        ], 429);
+    }
+}
+
+/**
+ * Apply Cross-Origin Resource Sharing (CORS) headers securely with origin validation.
  */
 function handle_cors(): void
 {
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
-    header('Access-Control-Allow-Origin: ' . $origin);
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+    $appUrl = envv('APP_URL', '');
+    $appHost = $appUrl ? parse_url($appUrl, PHP_URL_HOST) : null;
+    $serverHost = $_SERVER['HTTP_HOST'] ?? '';
+
+    // Allowed origins: matching current host, matching configured APP_URL, or localhost in non-production
+    $isAllowed = false;
+    if ($origin !== null && $origin !== '') {
+        $originHost = parse_url($origin, PHP_URL_HOST);
+        $isLocal = in_array($originHost, ['localhost', '127.0.0.1'], true) && envv('APP_ENV') !== 'production';
+        if ($originHost === $serverHost || ($appHost && $originHost === $appHost) || $isLocal) {
+            $isAllowed = true;
+            header('Access-Control-Allow-Origin: ' . $origin);
+            header('Access-Control-Allow-Credentials: true');
+            header('Vary: Origin');
+        }
+    }
+
     header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
-    header('Access-Control-Allow-Credentials: true');
     header('Access-Control-Max-Age: 86400');
 
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-        http_response_code(204);
+        http_response_code($isAllowed || empty($_SERVER['HTTP_ORIGIN']) ? 204 : 403);
         exit;
     }
 }
@@ -215,21 +318,30 @@ function is_admin(): bool
 function require_login(): void
 {
     if (!is_logged_in()) {
-        $isApi = str_contains($_SERVER['REQUEST_URI'] ?? '', '/api/') ||
-                 str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $isApi = str_contains($uri, '/api/') || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
         if ($isApi) {
             json_response(['error' => 'Authentication required. Please sign in.'], 401);
         }
-        $next = $_SERVER['REQUEST_URI'] ?? '/';
-        redirect(app_url('auth.php?next=' . urlencode($next)));
+        redirect(app_url('auth.php?next=' . urlencode($uri)));
     }
 }
 
 function require_admin(): void
 {
+    if (!is_logged_in()) {
+        $uri = $_SERVER['REQUEST_URI'] ?? '/admin/';
+        $isApi = str_contains($uri, '/api/') || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+        if ($isApi) {
+            json_response(['error' => 'Authentication required. Please sign in as an administrator.'], 401);
+        }
+        redirect(app_url('auth.php?next=' . urlencode($uri)));
+    }
+
     if (!is_admin()) {
         http_response_code(403);
-        if (str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')) {
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        if (str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') || str_contains($uri, '/api/')) {
             json_response(['error' => 'Forbidden: administrator access required'], 403);
         }
         exit('Forbidden: administrator access required.');
@@ -522,11 +634,12 @@ function public_posts(int $limit = 20, ?string $category = null, ?string $search
     $filter = ['status' => 'published'];
 
     if ($category !== null && trim($category) !== '') {
-        $filter['category'] = trim($category);
+        $filter['category'] = mb_substr(trim($category), 0, 50);
     }
 
     if ($search !== null && trim($search) !== '') {
-        $safeSearch = preg_quote(trim($search), '/');
+        $cleanSearch = mb_substr(trim($search), 0, 100);
+        $safeSearch = preg_quote($cleanSearch, '/');
         $filter['$or'] = [
             ['title' => new Regex($safeSearch, 'i')],
             ['excerpt' => new Regex($safeSearch, 'i')],

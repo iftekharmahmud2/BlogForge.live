@@ -6,6 +6,7 @@ require dirname(__DIR__, 2) . '/bootstrap.php';
 use BlogForge\Auth;
 
 handle_cors();
+check_rate_limit('auth_email', 10, 60);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_response(['error' => 'Method not allowed.'], 405);

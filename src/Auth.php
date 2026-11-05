@@ -30,6 +30,14 @@ final class Auth
             throw new \RuntimeException('Invalid email address or password.');
         }
 
+        // Automatically upgrade password hash if algorithm requirements change
+        if (password_needs_rehash((string)$user['password_hash'], PASSWORD_DEFAULT)) {
+            $db->users->updateOne(
+                ['_id' => $user['_id']],
+                ['$set' => ['password_hash' => password_hash($password, PASSWORD_DEFAULT)]]
+            );
+        }
+
         return self::startSession($user);
     }
 

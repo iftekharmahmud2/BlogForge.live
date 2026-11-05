@@ -9,8 +9,8 @@ $path = rawurldecode(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: 
 if (
     str_contains($path, "\0") ||
     preg_match('~(^|/)\.(?!well-known(?:/|$))~', $path) ||
-    preg_match('~^/(?:vendor|src|scripts|partials)(?:/|$)~i', $path) ||
-    preg_match('~^/(?:composer\.(?:json|lock)|package(?:-lock)?\.json|tailwind\.config\.js|Dockerfile|\.nvmrc|README\.md|bootstrap\.php|router\.php|\.htaccess|\.env.*)$~i', $path)
+    preg_match('~^/(?:vendor|src|scripts|partials|node_modules|storage|logs)(?:/|$)~i', $path) ||
+    preg_match('~^/(?:composer\.(?:json|lock)|package(?:-lock)?\.json|tailwind\.config\.js|Dockerfile|\.nvmrc|\.gitattributes|\.gitignore|README\.md|bootstrap\.php|router\.php|\.htaccess|\.env.*|.*\.(?:bak|backup|orig|save|log|sql|sh|bat))$~i', $path)
 ) {
     http_response_code(404);
     header('Content-Type: text/plain; charset=UTF-8');

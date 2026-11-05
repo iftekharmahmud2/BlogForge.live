@@ -1,5 +1,29 @@
+# Dependencies
 /vendor/
 /node_modules/
-/.env
-/storage/*.log
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# Logs and storage
+*.log
+/storage/
+/logs/
+
+# IDE & Editor configs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Operating system files
 .DS_Store
+Thumbs.db

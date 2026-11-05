@@ -1,8 +1,12 @@
+# Disable directory browsing & hide server signature
+Options -Indexes
+ServerSignature Off
+
 # Deny direct access to sensitive files and folders
-<FilesMatch "^(\.env.*|\.git.*|\.htaccess|composer\.(json|lock)|package(-lock)?\.json|tailwind\.config\.js|Dockerfile|\.nvmrc|README\.md|bootstrap\.php|router\.php)$">
+<FilesMatch "^(\.env.*|\.git.*|\.htaccess|composer\.(json|lock)|package(-lock)?\.json|tailwind\.config\.js|Dockerfile|\.nvmrc|\.gitattributes|\.gitignore|README\.md|bootstrap\.php|router\.php|.*\.bak|.*\.backup|.*\.orig|.*\.save|.*\.log|.*\.sql|.*\.sh|.*\.bat)$">
     Require all denied
 </FilesMatch>
-RedirectMatch 403 ^/(vendor|src|scripts|partials)(/|$)
+RedirectMatch 403 ^/(vendor|src|scripts|partials|node_modules|storage|logs)(/|$)
 
 RewriteEngine On
 RewriteBase /

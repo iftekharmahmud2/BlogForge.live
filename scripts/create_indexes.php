@@ -27,6 +27,8 @@ try {
     $db->comments->createIndex(['post_id' => 1, 'created_at' => -1]);
     $db->reactions->createIndex(['post_id' => 1, 'user_id' => 1, 'type' => 1], ['unique' => true]);
     $db->categories->createIndex(['slug' => 1], ['unique' => true]);
+    $db->rate_limits->createIndex(['created_at' => 1], ['expireAfterSeconds' => 3600]);
+    $db->rate_limits->createIndex(['ip' => 1, 'action' => 1, 'created_at' => -1]);
 
     echo "[+] BlogForge MongoDB indexes created successfully.\n";
 } catch (\Throwable $e) {

@@ -64,8 +64,11 @@ final class Database
         } catch (Throwable $e) {
             self::$database = null;
             $errMsg = $e->getMessage();
+            // Sanitize any passwords embedded within the raw error string
+            $errMsg = preg_replace('/(:\/\/[^:]+:)[^@]+(@)/', '$1*****$2', $errMsg) ?? $errMsg;
+
             if ($isDefault) {
-                $errMsg = 'MONGODB_URI environment variable is missing in Render dashboard (defaulted to 127.0.0.1). Details: ' . $errMsg;
+                $errMsg = 'MONGODB_URI environment variable is missing in deployment settings (defaulted to 127.0.0.1). Details: ' . $errMsg;
             } elseif (str_contains($errMsg, 'serverSelectionTimeoutMS')) {
                 $errMsg = 'Connection timed out (' . $timeout . 'ms). Check if MongoDB Atlas Network Access has 0.0.0.0/0 allowed. Details: ' . $errMsg;
             }

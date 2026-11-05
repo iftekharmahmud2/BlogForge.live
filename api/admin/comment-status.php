@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_admin();
 verify_csrf();
+check_rate_limit('admin_comment', 60, 60);
 
 $d = json_input();
 if (empty($d)) {

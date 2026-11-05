@@ -24,6 +24,7 @@ $action = trim((string)($d['action'] ?? 'update'));
 
 try {
     if ($action === 'password') {
+        check_rate_limit('change_password', 5, 300);
         Auth::changePassword(
             (string)$user['id'],
             (string)($d['current_password'] ?? ''),
@@ -33,6 +34,7 @@ try {
         json_response(['ok' => true, 'message' => 'Password updated.']);
     }
 
+    check_rate_limit('profile_update', 15, 60);
     $updated = Auth::updateProfile((string)$user['id'], $d);
     json_response(['ok' => true, 'user' => $updated, 'message' => 'Profile updated.']);
 } catch (\RuntimeException $e) {

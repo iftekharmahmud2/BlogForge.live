@@ -35,6 +35,7 @@ if ($method === 'GET') {
 // ----------------------------------------------------
 require_login();
 verify_csrf();
+check_rate_limit('comment_write', 15, 60);
 $user = current_user();
 
 // ----------------------------------------------------
