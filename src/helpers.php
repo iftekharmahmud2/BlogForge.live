@@ -40,8 +40,8 @@ function app_url(string $path = ''): string
 }
 
 /**
- * Resolve a cover image URL: retains external HTTP/HTTPS URLs safely,
- * prefixes internal assets with root slash, and provides a default fallback.
+ * Resolve a cover image URL: supports external HTTP/HTTPS URLs (Unsplash/Cloudinary),
+ * base64 data URIs (WebP/JPEG/PNG compressed uploads), and local assets.
  */
 function cover_url(?string $cover): string
 {
@@ -50,19 +50,92 @@ function cover_url(?string $cover): string
         return '/assets/img/covers/ai.svg';
     }
 
-    // If already absolute HTTP/HTTPS URL, sanitize and return directly
-    if (preg_match('~^https?://~i', $cover)) {
-        return filter_var($cover, FILTER_VALIDATE_URL) ? $cover : '/assets/img/covers/ai.svg';
+    // 1. Base64 Data URI (WebP/JPEG/PNG/GIF)
+    if (preg_match('~^data:image\/(webp|jpeg|png|gif);base64,[a-zA-Z0-9\/+]+={0,2}$~i', $cover)) {
+        return $cover;
     }
 
-    // Block directory traversal or invalid characters in relative paths
+    // 2. HTTP/HTTPS external image (Unsplash, Cloudinary, etc.)
+    if (preg_match('~^https?://~i', $cover)) {
+        if (!filter_var($cover, FILTER_VALIDATE_URL)) {
+            return '/assets/img/covers/ai.svg';
+        }
+        // Auto-optimize Unsplash images with responsive parameters if missing
+        if (str_contains($cover, 'images.unsplash.com') && !str_contains($cover, 'auto=format')) {
+            $separator = str_contains($cover, '?') ? '&' : '?';
+            $cover .= $separator . 'auto=format&fit=crop&w=1200&q=80';
+        }
+        return $cover;
+    }
+
+    // 3. Local asset path
     $clean = ltrim($cover, '/');
     if (str_contains($clean, '..') || !preg_match('~^[a-zA-Z0-9_\-\/\.]+$~', $clean)) {
         return '/assets/img/covers/ai.svg';
     }
 
-    // Relative asset path starting with root slash
     return '/' . $clean;
+}
+
+/**
+ * Upload an image (data URI, remote URL, or binary) to Cloudinary if configured.
+ * Supports CLOUDINARY_URL (cloudinary://api_key:api_secret@cloud_name) or discrete keys.
+ */
+function upload_to_cloudinary(string $imageData): ?string
+{
+    $cloudinaryUrl = envv('CLOUDINARY_URL');
+    $cloudName = envv('CLOUDINARY_CLOUD_NAME');
+    $apiKey = envv('CLOUDINARY_API_KEY');
+    $apiSecret = envv('CLOUDINARY_API_SECRET');
+    $uploadPreset = envv('CLOUDINARY_UPLOAD_PRESET', 'blogforge_preset');
+
+    if ($cloudinaryUrl && preg_match('~cloudinary://([^:]+):([^@]+)@([^/]+)~i', $cloudinaryUrl, $m)) {
+        $apiKey = $m[1];
+        $apiSecret = $m[2];
+        $cloudName = $m[3];
+    }
+
+    if (!$cloudName) {
+        return null;
+    }
+
+    $timestamp = time();
+    $params = [
+        'timestamp' => $timestamp,
+        'folder' => 'blogforge',
+    ];
+
+    if ($apiSecret && $apiKey) {
+        ksort($params);
+        $toSign = '';
+        foreach ($params as $k => $v) {
+            $toSign .= ($toSign === '' ? '' : '&') . $k . '=' . $v;
+        }
+        $params['signature'] = sha1($toSign . $apiSecret);
+        $params['api_key'] = $apiKey;
+    } else {
+        $params['upload_preset'] = $uploadPreset;
+    }
+
+    $params['file'] = $imageData;
+
+    $ch = curl_init('https://api.cloudinary.com/v1_1/' . rawurlencode($cloudName) . '/image/upload');
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    $res = curl_exec($ch);
+    $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($status === 200 && is_string($res)) {
+        $json = json_decode($res, true);
+        if (!empty($json['secure_url'])) {
+            return (string)$json['secure_url'];
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -390,8 +463,8 @@ function reading_time(string $body): int
 
 /**
  * Safely render story body content to HTML.
- * Escapes raw HTML first to prevent XSS, then parses safe markdown formatting
- * (headings, blockquotes, bold, italics, code, paragraphs).
+ * Handles both visual WYSIWYG HTML output and traditional Markdown.
+ * Strict tag/attribute whitelisting prevents any Cross-Site Scripting (XSS).
  */
 function body_to_html(string $body): string
 {
@@ -400,7 +473,50 @@ function body_to_html(string $body): string
         return '';
     }
 
-    // Split paragraphs by 2 or more line breaks
+    // Detect if content is already HTML formatted (from WYSIWYG editor)
+    $hasHtmlTags = (bool)preg_match('/<\s*(p|h2|h3|h4|blockquote|ul|ol|li|div|span|strong|em|img|a)\b/i', $body);
+
+    if ($hasHtmlTags) {
+        // Strip non-whitelisted tags
+        $allowedTags = '<h2><h3><h4><p><blockquote><strong><b><em><i><u><s><code><pre><ul><ol><li><a><img><br><hr>';
+        $cleaned = strip_tags($body, $allowedTags);
+
+        // Sanitize attributes on allowed tags (block onclick, onerror, javascript: URIs, etc.)
+        $cleaned = preg_replace_callback('/<([a-z0-9]+)([^>]*)>/i', function ($matches) {
+            $tag = strtolower($matches[1]);
+            $attrs = $matches[2];
+
+            // Reconstruct safe attributes
+            $safeAttrs = [];
+
+            if ($tag === 'a') {
+                if (preg_match('/href="([^"]+)"/i', $attrs, $m) || preg_match("/href='([^']+)'/i", $attrs, $m)) {
+                    $url = trim($m[1]);
+                    if (preg_match('~^https?://~i', $url) || str_starts_with($url, '/')) {
+                        $safeAttrs[] = 'href="' . e($url) . '" target="_blank" rel="noopener noreferrer" class="text-[#ff6b13] font-medium hover:underline"';
+                    }
+                }
+            } elseif ($tag === 'img') {
+                if (preg_match('/src="([^"]+)"/i', $attrs, $m) || preg_match("/src='([^']+)'/i", $attrs, $m)) {
+                    $src = trim($m[1]);
+                    if (preg_match('~^https?://~i', $src) || preg_match('~^data:image\/(webp|jpeg|png|gif);base64,~i', $src) || str_starts_with($src, '/')) {
+                        $safeAttrs[] = 'src="' . e($src) . '"';
+                    }
+                }
+                if (preg_match('/alt="([^"]*)"/i', $attrs, $m) || preg_match("/alt='([^']*)'/i", $attrs, $m)) {
+                    $safeAttrs[] = 'alt="' . e($m[1]) . '"';
+                }
+                $safeAttrs[] = 'class="rounded-2xl my-4 max-w-full shadow-sm"';
+                $safeAttrs[] = 'loading="lazy"';
+            }
+
+            return '<' . $tag . ($safeAttrs ? ' ' . implode(' ', $safeAttrs) : '') . '>';
+        }, $cleaned);
+
+        return $cleaned;
+    }
+
+    // Markdown processing fallback
     $blocks = preg_split('/\r\n\r\n|\n\n/', $body) ?: [];
     $htmlParts = [];
 
@@ -444,8 +560,8 @@ function body_to_html(string $body): string
         $safe = preg_replace('/(?<!\*)\*([^*]+)\*(?!\*)/', '<em>$1</em>', $safe) ?? $safe;
         $safe = preg_replace('/(?<!_)_([^_]+)_(?!_)/', '<em>$1</em>', $safe) ?? $safe;
 
-        // Images: ![alt](https://...)
-        $safe = preg_replace('~!\[([^\]]*)\]\((https?://[^\s)]+)\)~i', '<img src="$2" alt="$1" class="rounded-2xl my-4 max-w-full shadow-sm">', $safe) ?? $safe;
+        // Images: ![alt](https://...) or data URIs
+        $safe = preg_replace('~!\[([^\]]*)\]\((https?://[^\s)]+|data:image\/[a-zA-Z0-9\+\/=;]+)\)~i', '<img src="$2" alt="$1" class="rounded-2xl my-4 max-w-full shadow-sm" loading="lazy">', $safe) ?? $safe;
 
         // Links: [text](https://...)
         $safe = preg_replace('~\[([^\]]+)\]\((https?://[^\s)]+)\)~i', '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#ff6b13] font-medium hover:underline">$1</a>', $safe) ?? $safe;

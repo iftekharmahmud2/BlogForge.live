@@ -137,20 +137,42 @@
         });
 
         // ----------------------------------------------------
-        // 2. Bookmarks
+        // 2. Bookmarks & Reading List
         // ----------------------------------------------------
+        const savedPostsKey = 'blogforge_saved_posts';
+        const getSavedPosts = () => {
+            try { return JSON.parse(localStorage.getItem(savedPostsKey) || '[]'); } catch { return []; }
+        };
+        const isPostSaved = (id) => getSavedPosts().includes(id);
+
         $$('[data-bookmark]').forEach((btn) => {
+            const articleUrl = location.href;
+            const articleId = new URLSearchParams(location.search).get('id') || articleUrl;
+            const labelSpan = btn.querySelector('.bookmark-text') || btn;
+            const svgIcon = btn.querySelector('.bookmark-svg');
+
+            if (isPostSaved(articleId)) {
+                btn.classList.add('active', 'border-orange-300', 'bg-orange-50', 'text-[#ff6b13]');
+                if (labelSpan && labelSpan.classList.contains('bookmark-text')) labelSpan.textContent = 'Saved';
+                if (svgIcon) svgIcon.setAttribute('fill', 'currentColor');
+            }
+
             btn.addEventListener('click', () => {
-                if (!isLoggedIn) {
-                    toast('Sign in to save stories to your reading list.');
+                let saved = getSavedPosts();
+                if (saved.includes(articleId)) {
+                    saved = saved.filter(x => x !== articleId);
+                    localStorage.setItem(savedPostsKey, JSON.stringify(saved));
+                    btn.classList.remove('active', 'border-orange-300', 'bg-orange-50', 'text-[#ff6b13]');
+                    if (labelSpan && labelSpan.classList.contains('bookmark-text')) labelSpan.textContent = 'Save';
+                    if (svgIcon) svgIcon.setAttribute('fill', 'none');
+                    toast('Story removed from reading list');
                 } else {
-                    btn.classList.toggle('active');
-                    const isActive = btn.classList.contains('active');
-                    btn.classList.toggle('text-[#ff6b13]', isActive);
-                    btn.classList.toggle('bg-orange-50', isActive);
-                    btn.classList.toggle('border-orange-200', isActive);
-                    btn.textContent = isActive ? '♥' : '♡';
-                    toast(isActive ? 'Saved to reading list' : 'Removed from reading list');
+                    saved.push(articleId);
+                    localStorage.setItem(savedPostsKey, JSON.stringify(saved));
+                    btn.classList.add('active', 'border-orange-300', 'bg-orange-50', 'text-[#ff6b13]');
+                    if (labelSpan && labelSpan.classList.contains('bookmark-text')) labelSpan.textContent = 'Saved';
+                    if (svgIcon) svgIcon.setAttribute('fill', 'currentColor');
+                    toast('Story saved to reading list!');
                 }
             });
         });
@@ -161,7 +183,7 @@
         $$('[data-like]').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 if (!isLoggedIn) {
-                    location.href = baseUrl + '/auth.php';
+                    location.href = baseUrl + '/auth.php?next=' + encodeURIComponent(location.pathname + location.search);
                     return;
                 }
 
@@ -178,10 +200,10 @@
                     const counter = btn.querySelector('span');
                     if (counter) counter.textContent = data.likes;
                     btn.classList.toggle('liked', data.liked);
-                    btn.classList.toggle('text-red-500', data.liked);
+                    btn.classList.toggle('text-red-600', data.liked);
                     btn.classList.toggle('bg-red-50', data.liked);
-                    btn.classList.toggle('border-red-200', data.liked);
-                    toast(data.liked ? 'Story liked' : 'Like removed');
+                    btn.classList.toggle('border-red-300', data.liked);
+                    toast(data.liked ? 'Story liked!' : 'Like removed');
                 } catch (err) {
                     toast(err.message);
                 } finally {
@@ -248,94 +270,190 @@
         }
 
         // ----------------------------------------------------
-        // 5. Story Editor (Create & Edit Mode)
+        // 5. Client-Side Image Compression (Canvas WebP ~120-140KB)
+        // ----------------------------------------------------
+        async function compressImageToWebP(file, maxWidth = 1200, quality = 0.82) {
+            return new Promise((resolve, reject) => {
+                if (!file.type.match(/image.*/)) {
+                    return reject(new Error('File is not an image'));
+                }
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Failed to read image file'));
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('Failed to decode image'));
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Export as high-efficiency WebP (~120-140KB)
+                        const webpData = canvas.toDataURL('image/webp', quality);
+                        resolve(webpData);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ----------------------------------------------------
+        // 6. Visual WYSIWYG Story Editor (Create & Edit Mode)
         // ----------------------------------------------------
         const editor = $('[data-editor-form]');
         if (editor) {
-            const textarea = $('[name=body]', editor);
+            const wysiwyg = $('#wysiwyg-editor', editor);
+            const bodyHidden = $('#body-hidden-input', editor);
+            const coverInput = $('#cover-input', editor);
+            const coverUpload = $('#cover-file-upload', editor);
+            const coverPreviewContainer = $('#cover-preview-container', editor);
+            const coverPreviewImg = $('#cover-preview-img', editor);
+            const removeCoverBtn = $('#remove-cover-btn', editor);
+            const uploadStatus = $('#upload-status', editor);
 
-            // Formatting toolbar (inline and block marks)
-            $$('[data-format]').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    if (!textarea) return;
-                    const mark = btn.dataset.format;
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const sel = textarea.value.substring(start, end);
+            // Sync visual editor content to hidden textarea
+            const syncBody = () => {
+                if (wysiwyg && bodyHidden) {
+                    bodyHidden.value = wysiwyg.innerHTML.trim();
+                }
+            };
 
-                    // Block formats: Heading and Blockquote
-                    if (mark.endsWith(' ')) {
-                        const lines = (sel || 'Text').split('\n');
-                        const formatted = lines.map(l => mark + l).join('\n');
-                        textarea.setRangeText(formatted, start, end, 'end');
-                    } else {
-                        // Inline wrap: **bold**, *italic*, `code`
-                        textarea.setRangeText(mark + (sel || 'text') + mark, start, end, 'end');
-                    }
-                    textarea.focus();
+            if (wysiwyg) {
+                wysiwyg.addEventListener('input', syncBody);
+                wysiwyg.addEventListener('blur', syncBody);
+            }
+
+            // WYSIWYG Formatting Toolbar commands
+            $$('[data-cmd]', editor).forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (!wysiwyg) return;
+                    wysiwyg.focus();
+                    const cmd = btn.dataset.cmd;
+                    const val = btn.dataset.val || null;
+                    document.execCommand(cmd, false, val);
+                    syncBody();
                 });
             });
 
-            // Insert Link
-            const linkBtn = $('[data-insert-link]', editor);
-            if (linkBtn) {
-                linkBtn.addEventListener('click', () => {
-                    if (!textarea) return;
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const sel = textarea.value.substring(start, end) || 'link text';
-                    const url = prompt('Enter URL (https://...):', 'https://');
+            // Insert Link in WYSIWYG Editor
+            const wysiwygLinkBtn = $('#wysiwyg-link-btn', editor);
+            if (wysiwygLinkBtn) {
+                wysiwygLinkBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const url = prompt('Enter web address (https://...):', 'https://');
                     if (url && url.trim() !== '' && url !== 'https://') {
-                        textarea.setRangeText(`[${sel}](${url.trim()})`, start, end, 'end');
-                        textarea.focus();
+                        wysiwyg.focus();
+                        document.execCommand('createLink', false, url.trim());
+                        syncBody();
                     }
                 });
             }
 
-            // Insert Image
-            const imgBtn = $('[data-insert-image]', editor);
-            if (imgBtn) {
-                imgBtn.addEventListener('click', () => {
-                    if (!textarea) return;
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const alt = textarea.value.substring(start, end) || 'Image description';
-                    const url = prompt('Enter image URL (https://...):', 'https://');
+            // Insert Image in WYSIWYG Editor
+            const wysiwygImgBtn = $('#wysiwyg-img-btn', editor);
+            if (wysiwygImgBtn) {
+                wysiwygImgBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const url = prompt('Enter image URL (https://images.unsplash.com/...):', 'https://');
                     if (url && url.trim() !== '' && url !== 'https://') {
-                        textarea.setRangeText(`![${alt}](${url.trim()})\n`, start, end, 'end');
-                        textarea.focus();
+                        wysiwyg.focus();
+                        document.execCommand('insertImage', false, url.trim());
+                        syncBody();
                     }
                 });
             }
 
-            // Clear Formatting
-            const clearBtn = $('[data-clear-format]', editor);
-            if (clearBtn) {
-                clearBtn.addEventListener('click', () => {
-                    if (!textarea) return;
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const sel = textarea.value.substring(start, end);
-                    if (!sel) return;
-                    const cleaned = sel
-                        .replace(/^(\s*#{1,6}\s+)/gm, '')
-                        .replace(/^(\s*>\s*)/gm, '')
-                        .replace(/\*\*([^*]+)\*\*/g, '$1')
-                        .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '$1')
-                        .replace(/(?<!_)_([^_]+)_(?!_)/g, '$1')
-                        .replace(/`([^`]+)`/g, '$1')
-                        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-                        .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1');
-                    textarea.setRangeText(cleaned, start, end, 'end');
-                    textarea.focus();
+            // Cover Image Input live change
+            if (coverInput && coverPreviewImg && coverPreviewContainer) {
+                coverInput.addEventListener('input', () => {
+                    const val = coverInput.value.trim();
+                    if (val) {
+                        coverPreviewImg.src = val;
+                        coverPreviewContainer.classList.remove('hidden');
+                    } else {
+                        coverPreviewContainer.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Remove Cover Button
+            if (removeCoverBtn && coverInput && coverPreviewContainer) {
+                removeCoverBtn.addEventListener('click', () => {
+                    coverInput.value = '';
+                    coverPreviewContainer.classList.add('hidden');
+                    if (coverPreviewImg) coverPreviewImg.src = '';
+                });
+            }
+
+            // Client-side WebP Compression & Upload for Cover Image
+            if (coverUpload) {
+                coverUpload.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    if (file.size > 2 * 1024 * 1024) {
+                        toast('Image exceeds 2MB limit. Please choose a smaller file.');
+                        return;
+                    }
+
+                    if (uploadStatus) uploadStatus.textContent = 'Compressing image…';
+
+                    try {
+                        // Compress to WebP format (~120-140KB)
+                        const compressedWebP = await compressImageToWebP(file, 1200, 0.82);
+
+                        if (uploadStatus) uploadStatus.textContent = 'Saving image…';
+
+                        // Upload via backend API (Cloudinary if available or optimized WebP base64)
+                        const uploadRes = await api(baseUrl + '/api/upload.php', {
+                            method: 'POST',
+                            body: { image: compressedWebP },
+                        });
+
+                        const finalUrl = uploadRes.url || compressedWebP;
+
+                        if (coverInput) coverInput.value = finalUrl;
+                        if (coverPreviewImg) coverPreviewImg.src = finalUrl;
+                        if (coverPreviewContainer) coverPreviewContainer.classList.remove('hidden');
+
+                        toast('Cover image compressed & attached!');
+                        if (uploadStatus) uploadStatus.textContent = '✓ Ready';
+                    } catch (err) {
+                        console.error('Image upload error:', err);
+                        toast('Failed to process image: ' + err.message);
+                        if (uploadStatus) uploadStatus.textContent = 'Error';
+                    }
                 });
             }
 
             // Form submission
             editor.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                syncBody();
+
                 const fd = new FormData(editor);
                 const payload = Object.fromEntries(fd.entries());
+
+                if (!payload.title || !payload.title.trim()) {
+                    toast('Please enter a title for your story.');
+                    return;
+                }
+
+                if (!payload.body || !payload.body.trim()) {
+                    toast('Story body cannot be empty.');
+                    return;
+                }
 
                 payload.tags = (payload.tags || '')
                     .split(',')
@@ -366,6 +484,18 @@
                     }
 
                     setTimeout(() => {
+                        const target = result.slug || result.id || '';
+                        if (payload.status === 'draft') {
+                            location.href = baseUrl + '/drafts.php';
+                        } else {
+                            location.href = baseUrl + '/article.php?id=' + encodeURIComponent(target);
+                        }
+                    }, 500);
+                } catch (err) {
+                    toast(err.message);
+                }
+            });
+        }
                         const target = result.slug || result.id || '';
                         location.href = baseUrl + '/article.php?id=' + encodeURIComponent(target);
                     }, 600);

@@ -27,73 +27,140 @@ $canManage = $currentUser && ($isAuthor || is_admin());
 require __DIR__ . '/partials/header.php';
 ?>
 
-<article class="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-    <!-- Story Kicker -->
-    <div class="flex items-center gap-3 text-xs font-semibold mb-4">
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700"><?= e($post['category']) ?></span>
-        <?php if (($post['status'] ?? 'published') === 'draft'): ?>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">Draft</span>
-        <?php endif; ?>
-        <span class="text-gray-400 font-normal">·</span>
-        <span class="text-gray-500 font-normal"><?= e((string)$post['read_time']) ?> min read</span>
+<article class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <!-- Prominent UX Navigation: Back to Stories Button -->
+    <div class="mb-6 flex items-center justify-between">
+        <a href="<?= e(app_url('explore.php')) ?>" class="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-600 hover:text-[#ff6b13] transition group">
+            <span class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center group-hover:border-orange-300 group-hover:bg-orange-50 transition shadow-sm text-gray-500 group-hover:text-[#ff6b13]">←</span>
+            <span>Back to stories</span>
+        </a>
+
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700">
+                <?= e($post['category']) ?>
+            </span>
+            <?php if (($post['status'] ?? 'published') === 'draft'): ?>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+                    Draft
+                </span>
+            <?php endif; ?>
+            <span class="text-gray-400 text-xs">·</span>
+            <span class="text-gray-500 text-xs font-medium"><?= e((string)($post['read_time'] ?? 3)) ?> min read</span>
+        </div>
     </div>
 
-    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900 leading-[1.15] mb-4"><?= e($post['title']) ?></h1>
+    <!-- Title and Subtitle -->
+    <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-gray-900 leading-[1.15] mb-4">
+        <?= e($post['title']) ?>
+    </h1>
     <?php if (!empty($post['excerpt'])): ?>
-        <p class="text-lg sm:text-xl text-gray-500 font-normal leading-relaxed mb-8"><?= e($post['excerpt']) ?></p>
+        <p class="text-lg sm:text-xl text-gray-600 font-normal leading-relaxed mb-8">
+            <?= e($post['excerpt']) ?>
+        </p>
     <?php endif; ?>
 
-    <!-- Author & Story Actions -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-5 border-y border-[#e9e5df] mb-8">
+    <!-- Author & Action Bar (Redesigned with SVG icons and clear labels) -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-5 border-y border-gray-200 mb-8">
         <div class="flex items-center gap-3">
-            <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs shrink-0"><?= e(initials($post['author']['name'] ?? 'Author')) ?></span>
+            <span class="w-11 h-11 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                <?= e(initials($post['author']['name'] ?? 'Author')) ?>
+            </span>
             <div>
-                <b class="block text-sm font-semibold text-gray-900"><?= e($post['author']['name'] ?? 'Author') ?></b>
-                <span class="text-xs text-gray-400"><?= e(format_date($post['published_at'] ?? $post['created_at'] ?? time())) ?></span>
+                <b class="block text-sm font-bold text-gray-900"><?= e($post['author']['name'] ?? 'Author') ?></b>
+                <span class="text-xs text-gray-500"><?= e(format_date($post['published_at'] ?? $post['created_at'] ?? time())) ?></span>
             </div>
         </div>
 
-        <div class="flex items-center gap-2 self-end sm:self-auto">
+        <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
             <?php if ($canManage): ?>
-                <a class="inline-flex items-center px-3 py-1.5 rounded-full border border-gray-300 text-xs font-semibold text-gray-700 hover:border-gray-400 transition" href="<?= e(app_url('write.php?id=' . urlencode((string)$post['_id']))) ?>" title="Edit Story">Edit</a>
-                <button class="inline-flex items-center px-3 py-1.5 rounded-full bg-red-50 text-red-600 border border-red-200 text-xs font-semibold hover:bg-red-100 transition cursor-pointer" data-delete-post="<?= e((string)$post['_id']) ?>" data-post-title="<?= e($post['title']) ?>" title="Delete Story">Delete</button>
+                <a class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:border-gray-400 transition shadow-sm" href="<?= e(app_url('write.php?id=' . urlencode((string)$post['_id']))) ?>" title="Edit Story">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    <span>Edit</span>
+                </a>
+                <button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-600 border border-red-200 text-xs font-semibold hover:bg-red-100 transition cursor-pointer shadow-sm" data-delete-post="<?= e((string)$post['_id']) ?>" data-post-title="<?= e($post['title']) ?>" title="Delete Story">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span>Delete</span>
+                </button>
             <?php endif; ?>
-            <button class="w-9 h-9 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-xs font-semibold text-gray-600 transition cursor-pointer" data-like="<?= e($postId) ?>" title="Like">♥ <span class="ml-1 text-[11px]"><?= e((string)($post['likes'] ?? 0)) ?></span></button>
-            <button class="w-9 h-9 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-xs text-gray-600 transition cursor-pointer" data-bookmark title="Save">♡</button>
-            <button class="w-9 h-9 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-xs text-gray-600 transition cursor-pointer" onclick="navigator.clipboard.writeText(location.href);toast('Link copied to clipboard');" title="Share">↗</button>
+
+            <!-- Like Pill -->
+            <button class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 bg-white hover:border-red-200 hover:bg-red-50 hover:text-red-600 text-xs font-semibold text-gray-700 transition cursor-pointer shadow-sm" data-like="<?= e($postId) ?>" title="Like story">
+                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
+                <span class="font-bold"><?= e((string)($post['likes'] ?? 0)) ?></span>
+            </button>
+
+            <!-- Save / Bookmark Pill -->
+            <button class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50 hover:text-[#ff6b13] text-xs font-semibold text-gray-700 transition cursor-pointer shadow-sm" data-bookmark title="Save to reading list">
+                <svg class="w-4 h-4 text-gray-500 bookmark-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                <span class="bookmark-text">Save</span>
+            </button>
+
+            <!-- Share Story Pill -->
+            <button class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 text-xs font-semibold text-gray-700 transition cursor-pointer shadow-sm" onclick="navigator.clipboard.writeText(location.href);toast('Story link copied to clipboard!');" title="Share story">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                <span>Share</span>
+            </button>
         </div>
     </div>
 
     <!-- Cover Image -->
-    <div class="w-full aspect-[16/9] rounded-2xl overflow-hidden bg-gray-100 mb-10 shadow-sm">
+    <div class="w-full aspect-[16/9] rounded-3xl overflow-hidden bg-gray-100 mb-10 shadow-sm border border-gray-100">
         <img class="w-full h-full object-cover" src="<?= e(cover_url($post['cover'] ?? null)) ?>" alt="<?= e($post['title']) ?>">
     </div>
 
-    <!-- Content -->
-    <div class="text-[#25282c] text-lg leading-[1.8] space-y-6 [&>p]:leading-[1.8] [&>blockquote]:border-l-4 [&>blockquote]:border-[#ff6b13] [&>blockquote]:bg-[#faf7f2] [&>blockquote]:p-4 [&>blockquote]:rounded-r-xl [&>blockquote]:italic [&>blockquote]:text-gray-700 [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-8 [&>h2]:mb-3 [&>h3]:text-xl [&>h3]:font-bold [&>h3]:mt-6 [&>h3]:mb-2 [&>code]:bg-[#f2efe9] [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-sm [&>code]:font-mono">
+    <!-- Story Content -->
+    <div class="text-[#25282c] text-lg leading-[1.8] space-y-6 [&>p]:leading-[1.8] [&>blockquote]:border-l-4 [&>blockquote]:border-[#ff6b13] [&>blockquote]:bg-[#faf7f2] [&>blockquote]:p-5 [&>blockquote]:rounded-r-2xl [&>blockquote]:italic [&>blockquote]:text-gray-800 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-extrabold [&>h2]:mt-10 [&>h2]:mb-4 [&>h2]:text-gray-900 [&>h3]:text-xl sm:[&>h3]:text-2xl [&>h3]:font-bold [&>h3]:mt-8 [&>h3]:mb-3 [&>h3]:text-gray-900 [&>code]:bg-[#f2efe9] [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-sm [&>code]:font-mono [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:space-y-2 [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:space-y-2">
         <?= body_to_html((string)$post['body']) ?>
     </div>
 
+    <!-- Tags -->
+    <?php if (!empty($post['tags']) && is_array($post['tags'])): ?>
+        <div class="flex flex-wrap items-center gap-2 mt-12 pt-6 border-t border-gray-100">
+            <?php foreach ($post['tags'] as $tag): ?>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                    #<?= e(trim((string)$tag)) ?>
+                </span>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- Bottom Navigation Callout -->
+    <div class="mt-12 p-6 rounded-3xl bg-[#fbfaf8] border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                <?= e(initials($post['author']['name'] ?? 'Author')) ?>
+            </span>
+            <div>
+                <b class="text-sm text-gray-900 block">Written by <?= e($post['author']['name'] ?? 'Author') ?></b>
+                <span class="text-xs text-gray-500">Read more stories in <a href="<?= e(app_url('explore.php?category=' . urlencode($post['category'] ?? ''))) ?>" class="text-[#ff6b13] font-semibold hover:underline"><?= e($post['category'] ?? 'General') ?></a></span>
+            </div>
+        </div>
+        <a href="<?= e(app_url('explore.php')) ?>" class="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-2 text-xs font-semibold text-gray-700 hover:border-gray-400 transition shadow-sm">
+            ← Back to all stories
+        </a>
+    </div>
+
     <!-- Comments / Responses -->
-    <section class="mt-16 pt-10 border-t border-[#e9e5df]">
+    <section class="mt-14 pt-10 border-t border-gray-200">
         <h2 class="text-2xl font-bold text-gray-900 mb-6">Responses (<?= count($comments) ?>)</h2>
 
         <?php if (is_logged_in()): ?>
             <form class="space-y-3" data-comment-form data-post-id="<?= e($postId) ?>">
-                <textarea class="w-full min-h-[110px] p-4 bg-white border border-[#e9e5df] rounded-2xl text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition shadow-sm resize-y" placeholder="What are your thoughts? Respond respectfully…" required></textarea>
+                <textarea class="w-full min-h-[110px] p-4 bg-white border border-gray-200 rounded-2xl text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition shadow-sm resize-y" placeholder="What are your thoughts? Respond respectfully…" required></textarea>
                 <div class="text-right">
-                    <button class="inline-flex items-center justify-center rounded-full bg-gray-900 text-white font-semibold text-sm px-5 py-2.5 hover:bg-black transition shadow-sm cursor-pointer" type="submit">Publish response</button>
+                    <button class="inline-flex items-center justify-center rounded-full bg-gray-900 text-white font-semibold text-sm px-6 py-2.5 hover:bg-black transition shadow-sm cursor-pointer" type="submit">Publish response</button>
                 </div>
             </form>
         <?php else: ?>
-            <div class="p-4 bg-orange-50/50 border border-orange-100 rounded-2xl text-sm text-gray-600">
-                <a href="<?= e(app_url('auth.php?next=' . urlencode($_SERVER['REQUEST_URI'] ?? '/'))) ?>" class="text-[#ff6b13] font-semibold hover:underline">Sign in</a> to leave a response.
+            <div class="p-5 bg-orange-50/60 border border-orange-100 rounded-2xl text-sm text-gray-600 flex items-center justify-between gap-4">
+                <span>Sign in to join the conversation and leave a response.</span>
+                <a href="<?= e(app_url('auth.php?next=' . urlencode($_SERVER['REQUEST_URI'] ?? '/'))) ?>" class="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white font-semibold text-xs shadow-sm hover:brightness-105 transition shrink-0">Sign in</a>
             </div>
         <?php endif; ?>
 
-        <div class="mt-8 divide-y divide-[#e9e5df]" data-comments-container>
+        <div class="mt-8 divide-y divide-gray-100" data-comments-container>
             <?php if (empty($comments)): ?>
-                <p class="text-sm text-gray-500 py-4" data-no-comments>No responses yet. Be the first to share your perspective!</p>
+                <p class="text-sm text-gray-500 py-6" data-no-comments>No responses yet. Be the first to share your perspective!</p>
             <?php else: ?>
                 <?php foreach ($comments as $c): ?>
                     <div class="py-5 space-y-1.5">
