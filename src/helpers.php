@@ -111,7 +111,7 @@ function upload_to_cloudinary(string $imageData): ?string
         foreach ($params as $k => $v) {
             $toSign .= ($toSign === '' ? '' : '&') . $k . '=' . $v;
         }
-        $params['signature'] = sha1($toSign . $apiSecret);
+        $params['signature'] = hash('sha256', $toSign . $apiSecret);
         $params['api_key'] = $apiKey;
     } else {
         $params['upload_preset'] = $uploadPreset;
@@ -156,27 +156,34 @@ function db(): ?\MongoDB\Database
 
 /**
  * Get client IP address accurately and securely.
+ * Only trusts proxy headers when TRUSTED_PROXY=true is set in .env.
  */
 function get_client_ip(): string
 {
-    $headers = [
-        'HTTP_CF_CONNECTING_IP',
-        'HTTP_X_FORWARDED_FOR',
-        'HTTP_X_REAL_IP',
-        'REMOTE_ADDR'
-    ];
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
-    foreach ($headers as $header) {
-        if (!empty($_SERVER[$header])) {
-            $ipList = explode(',', (string)$_SERVER[$header]);
-            $ip = trim($ipList[0]);
-            if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                return $ip;
+    // Only trust proxy-forwarded headers if the application is explicitly configured
+    // to run behind a trusted reverse proxy (Cloudflare, AWS ALB, Vercel, etc.)
+    $trustedProxy = envv('TRUSTED_PROXY', 'false') === 'true';
+    if ($trustedProxy) {
+        $proxyHeaders = [
+            'HTTP_CF_CONNECTING_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_REAL_IP',
+        ];
+
+        foreach ($proxyHeaders as $header) {
+            if (!empty($_SERVER[$header])) {
+                $ipList = explode(',', (string)$_SERVER[$header]);
+                $ip = trim($ipList[0]);
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
             }
         }
     }
 
-    return '127.0.0.1';
+    return filter_var($remoteAddr, FILTER_VALIDATE_IP) ? $remoteAddr : '127.0.0.1';
 }
 
 /**
@@ -492,7 +499,10 @@ function body_to_html(string $body): string
             if ($tag === 'a') {
                 if (preg_match('/href="([^"]+)"/i', $attrs, $m) || preg_match("/href='([^']+)'/i", $attrs, $m)) {
                     $url = trim($m[1]);
-                    if (preg_match('~^https?://~i', $url) || str_starts_with($url, '/')) {
+                    // Block protocol-relative URLs (//evil.com), backslash tricks (/\evil.com), and javascript: URIs
+                    $isSafeUrl = (bool)preg_match('~^https?://~i', $url) ||
+                                 (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_starts_with($url, '/\\'));
+                    if ($isSafeUrl) {
                         $safeAttrs[] = 'href="' . e($url) . '" target="_blank" rel="noopener noreferrer" class="text-[#ff6b13] font-medium hover:underline"';
                     }
                 }
@@ -755,12 +765,9 @@ function public_posts(int $limit = 20, ?string $category = null, ?string $search
 
     if ($search !== null && trim($search) !== '') {
         $cleanSearch = mb_substr(trim($search), 0, 100);
-        $safeSearch = preg_quote($cleanSearch, '/');
-        $filter['$or'] = [
-            ['title' => new Regex($safeSearch, 'i')],
-            ['excerpt' => new Regex($safeSearch, 'i')],
-            ['tags' => new Regex($safeSearch, 'i')],
-        ];
+        // Use MongoDB $text search index (created in scripts/create_indexes.php)
+        // instead of unanchored regex queries to prevent ReDoS and full collection scans
+        $filter['$text'] = ['$search' => $cleanSearch];
     }
 
     try {

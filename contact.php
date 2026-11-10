@@ -131,7 +131,7 @@ require __DIR__ . '/partials/header.php';
                     <?php endif; ?>
 
                     <form method="POST" action="<?= e(app_url('contact.php')) ?>" class="space-y-4">
-                        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>

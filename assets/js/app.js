@@ -496,14 +496,6 @@
                 }
             });
         }
-                        const target = result.slug || result.id || '';
-                        location.href = baseUrl + '/article.php?id=' + encodeURIComponent(target);
-                    }, 600);
-                } catch (err) {
-                    toast(err.message);
-                }
-            });
-        }
 
         // ----------------------------------------------------
         // 6. Story Deletion Handlers

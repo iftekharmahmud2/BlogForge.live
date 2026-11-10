@@ -11,6 +11,16 @@
   },
   "routes": [
     {
+      "src": "^/(\\.env.*|\\.git.*|\\.htaccess|composer\\.(json|lock)|package(-lock)?\\.json|tailwind\\.config\\.js|Dockerfile|\\.nvmrc|\\.gitattributes|\\.gitignore|README\\.md|REPORT\\.md|DEPLOYMENT\\.md|bootstrap\\.php|router\\.php)$",
+      "status": 404,
+      "dest": "/index.php"
+    },
+    {
+      "src": "^/(vendor|src|scripts|partials|node_modules|storage|logs)(/.*)?$",
+      "status": 404,
+      "dest": "/index.php"
+    },
+    {
       "src": "^/assets/(.*)",
       "dest": "/assets/$1",
       "headers": {

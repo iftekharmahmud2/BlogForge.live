@@ -27,6 +27,16 @@ if (!$imageData || !is_string($imageData)) {
     json_response(['error' => 'No image data provided.'], 422);
 }
 
+// Validate base64 payload size (max ~500KB encoded = ~375KB binary image)
+if (strlen($imageData) > 500 * 1024) {
+    json_response(['error' => 'Image payload exceeds maximum allowed size (500KB compressed). Please reduce image dimensions or quality.'], 422);
+}
+
+// Validate data URI format to prevent non-image uploads and script injection
+if (str_starts_with($imageData, 'data:') && !preg_match('~^data:image/(webp|jpeg|jpg|png|gif);base64,[a-zA-Z0-9/+=]+$~i', $imageData)) {
+    json_response(['error' => 'Invalid image format. Only WebP, JPEG, PNG, and GIF data URIs are accepted.'], 422);
+}
+
 // 1. Try uploading to Cloudinary if configured
 $cloudinaryUrl = upload_to_cloudinary($imageData);
 if ($cloudinaryUrl) {

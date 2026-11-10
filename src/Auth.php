@@ -26,8 +26,47 @@ final class Auth
         }
 
         $user = $db->users->findOne(['email' => $email]);
+
+        // Account lockout check: block login if too many consecutive failures
+        if ($user) {
+            $failedAttempts = (int)($user['failed_attempts'] ?? 0);
+            $lockedUntil = $user['locked_until'] ?? null;
+
+            if ($lockedUntil instanceof \MongoDB\BSON\UTCDateTime) {
+                $lockTime = $lockedUntil->toDateTime()->getTimestamp();
+                if (time() < $lockTime) {
+                    $minutesLeft = (int)ceil(($lockTime - time()) / 60);
+                    throw new \RuntimeException('Account temporarily locked due to too many failed login attempts. Please try again in ' . $minutesLeft . ' minute(s).');
+                }
+                // Lock period expired — reset counters
+                $db->users->updateOne(['_id' => $user['_id']], [
+                    '$set' => ['failed_attempts' => 0],
+                    '$unset' => ['locked_until' => ''],
+                ]);
+                $failedAttempts = 0;
+            }
+        }
+
         if (!$user || empty($user['password_hash']) || !password_verify($password, (string)$user['password_hash'])) {
+            // Increment failed_attempts on the user document (if the email exists)
+            if ($user) {
+                $newCount = ((int)($user['failed_attempts'] ?? 0)) + 1;
+                $update = ['$set' => ['failed_attempts' => $newCount]];
+                if ($newCount >= 5) {
+                    // Lock account for 15 minutes after 5 consecutive failures
+                    $update['$set']['locked_until'] = new UTCDateTime((time() + 900) * 1000);
+                }
+                $db->users->updateOne(['_id' => $user['_id']], $update);
+            }
             throw new \RuntimeException('Invalid email address or password.');
+        }
+
+        // Successful login — reset failed attempts counter
+        if (($user['failed_attempts'] ?? 0) > 0 || isset($user['locked_until'])) {
+            $db->users->updateOne(['_id' => $user['_id']], [
+                '$set' => ['failed_attempts' => 0],
+                '$unset' => ['locked_until' => ''],
+            ]);
         }
 
         // Automatically upgrade password hash if algorithm requirements change
@@ -307,6 +346,12 @@ final class Auth
         }
         if (strlen($password) > 200) {
             throw new \RuntimeException('Password is too long.');
+        }
+        if (!preg_match('/[A-Za-z]/', $password)) {
+            throw new \RuntimeException('Password must include at least one letter.');
+        }
+        if (!preg_match('/[0-9]/', $password)) {
+            throw new \RuntimeException('Password must include at least one number.');
         }
     }
 

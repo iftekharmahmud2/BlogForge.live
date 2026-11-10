@@ -57,6 +57,7 @@ if (PHP_SAPI !== 'cli' && !headers_sent()) {
     header('X-XSS-Protection: 1; mode=block');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.cloudinary.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
 
     $isSecure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
                 (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
@@ -77,6 +78,19 @@ if (PHP_SAPI !== 'cli' && !headers_sent() && session_status() !== PHP_SESSION_AC
         'cookie_samesite' => 'Lax',
         'cookie_secure' => $isSecure,
     ]);
+
+    // Server-side session inactivity expiry: auto-destroy idle sessions after 2 hours
+    $maxIdleTime = 7200; // 2 hours in seconds
+    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $maxIdleTime)) {
+        session_unset();
+        session_destroy();
+        session_start([
+            'cookie_httponly' => true,
+            'cookie_samesite' => 'Lax',
+            'cookie_secure' => $isSecure,
+        ]);
+    }
+    $_SESSION['last_activity'] = time();
 }
 
 date_default_timezone_set('UTC');
