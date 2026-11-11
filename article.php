@@ -105,7 +105,7 @@ require __DIR__ . '/partials/header.php';
 
     <!-- Cover Image -->
     <div class="w-full aspect-[16/9] rounded-3xl overflow-hidden bg-gray-100 mb-10 shadow-sm border border-gray-100">
-        <img class="w-full h-full object-cover" src="<?= e(cover_url($post['cover'] ?? null)) ?>" alt="<?= e($post['title']) ?>">
+        <img class="w-full h-full object-cover" src="<?= e(cover_url($post['cover'] ?? null, $post['category'] ?? null)) ?>" alt="<?= e($post['title']) ?>">
     </div>
 
     <!-- Story Content -->

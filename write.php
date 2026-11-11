@@ -38,6 +38,9 @@ if ($editId !== '') {
 
 $categories = ['Technology', 'Lifestyle', 'Business', 'Education', 'Health', 'Travel', 'Culture', 'Self Improvement'];
 $currentCover = (string)($post['cover'] ?? '');
+if (preg_match('~^/?assets/img/covers/[^/]+\.svg$~i', $currentCover)) {
+    $currentCover = '';
+}
 $currentBody = (string)($post['body'] ?? '');
 
 require __DIR__ . '/partials/header.php';
@@ -78,7 +81,7 @@ require __DIR__ . '/partials/header.php';
                 
                 <!-- Live Cover Preview (if selected) -->
                 <div id="cover-preview-container" class="<?= empty($currentCover) ? 'hidden' : '' ?> relative w-full aspect-[21/9] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm mb-4">
-                    <img id="cover-preview-img" src="<?= e(cover_url($currentCover)) ?>" alt="Cover preview" class="w-full h-full object-cover">
+                    <img id="cover-preview-img" src="<?= e(cover_url($currentCover, $post['category'] ?? null)) ?>" alt="Cover preview" class="w-full h-full object-cover">
                     <button type="button" id="remove-cover-btn" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white text-xs flex items-center justify-center transition cursor-pointer" title="Remove cover">✕</button>
                 </div>
 
@@ -142,10 +145,10 @@ require __DIR__ . '/partials/header.php';
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                            Cover Image <span class="text-gray-400 font-normal lowercase">(Unsplash URL, Cloudinary, or Upload)</span>
+                            Cover Image <span class="text-gray-400 font-normal lowercase">(auto from category if blank, URL, or Upload)</span>
                         </label>
                         <div class="space-y-2">
-                            <input id="cover-input" class="w-full bg-[#fbfaf8] border border-gray-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition" name="cover" placeholder="https://images.unsplash.com/…" value="<?= e($currentCover) ?>">
+                            <input id="cover-input" class="w-full bg-[#fbfaf8] border border-gray-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition" name="cover" placeholder="Leave blank for category cover, or paste image URL…" value="<?= e($currentCover) ?>">
                             
                             <div class="flex items-center gap-2">
                                 <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700 cursor-pointer transition shadow-sm">

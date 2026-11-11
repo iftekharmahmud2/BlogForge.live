@@ -66,7 +66,7 @@ require __DIR__ . '/partials/header.php';
                 <div data-post-card class="bg-white border border-[#e9e5df] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group">
                     <div>
                         <div class="aspect-[16/10] overflow-hidden bg-gray-100">
-                            <img src="<?= e(cover_url($p['cover'] ?? null)) ?>" alt="<?= e($p['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <img src="<?= e(cover_url($p['cover'] ?? null, $p['category'] ?? null)) ?>" alt="<?= e($p['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                         </div>
                         <div class="p-5">
                             <div class="flex items-center justify-between gap-2 mb-2">

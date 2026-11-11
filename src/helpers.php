@@ -40,14 +40,34 @@ function app_url(string $path = ''): string
 }
 
 /**
- * Resolve a cover image URL: supports external HTTP/HTTPS URLs (Unsplash/Cloudinary),
- * base64 data URIs (WebP/JPEG/PNG compressed uploads), and local assets.
+ * Map a post category to its default editorial WebP cover image.
  */
-function cover_url(?string $cover): string
+function category_cover(?string $category): string
+{
+    static $map = [
+        'business'         => '/assets/img/covers/business.webp',
+        'culture'          => '/assets/img/covers/culture.webp',
+        'education'        => '/assets/img/covers/education.webp',
+        'health'           => '/assets/img/covers/health.webp',
+        'lifestyle'        => '/assets/img/covers/lifestyle.webp',
+        'self-improvement' => '/assets/img/covers/self-improvement.webp',
+        'technology'       => '/assets/img/covers/technology.webp',
+        'travel'           => '/assets/img/covers/travel.webp',
+    ];
+
+    $key = trim((string)preg_replace('/[^a-z0-9]+/', '-', strtolower(trim((string)$category))), '-');
+    return $map[$key] ?? '/assets/img/covers/technology.webp';
+}
+
+/**
+ * Resolve a cover image URL: supports external HTTP/HTTPS URLs (Unsplash/Cloudinary),
+ * base64 data URIs (WebP/JPEG/PNG compressed uploads), local assets, and category fallbacks.
+ */
+function cover_url(?string $cover, ?string $category = null): string
 {
     $cover = trim((string)$cover);
     if ($cover === '') {
-        return '/assets/img/covers/ai.svg';
+        return category_cover($category);
     }
 
     // 1. Base64 Data URI (WebP/JPEG/PNG/GIF)
@@ -58,7 +78,7 @@ function cover_url(?string $cover): string
     // 2. HTTP/HTTPS external image (Unsplash, Cloudinary, etc.)
     if (preg_match('~^https?://~i', $cover)) {
         if (!filter_var($cover, FILTER_VALIDATE_URL)) {
-            return '/assets/img/covers/ai.svg';
+            return category_cover($category);
         }
         // Auto-optimize Unsplash images with responsive parameters if missing
         if (str_contains($cover, 'images.unsplash.com') && !str_contains($cover, 'auto=format')) {
@@ -71,7 +91,15 @@ function cover_url(?string $cover): string
     // 3. Local asset path
     $clean = ltrim($cover, '/');
     if (str_contains($clean, '..') || !preg_match('~^[a-zA-Z0-9_\-\/\.]+$~', $clean)) {
-        return '/assets/img/covers/ai.svg';
+        return category_cover($category);
+    }
+
+    // Upgrade legacy/removed default cover paths to the active category WebP asset
+    if (str_starts_with($clean, 'assets/img/covers/')) {
+        $diskPath = dirname(__DIR__) . '/' . $clean;
+        if (str_ends_with(strtolower($clean), '.svg') || !is_file($diskPath)) {
+            return category_cover($category);
+        }
     }
 
     return '/' . $clean;
@@ -667,7 +695,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-1', 'name' => 'Sarah Ahmed', 'handle' => 'sarahahmed'],
             'published_at' => time() - 86400 * 2,
             'read_time' => 6,
-            'cover' => 'assets/img/covers/ai.svg',
+            'cover' => 'assets/img/covers/technology.webp',
             'likes' => 284,
             'comments' => 12,
         ],
@@ -683,7 +711,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-2', 'name' => 'Mehedi Hasan', 'handle' => 'mehedihasan'],
             'published_at' => time() - 86400 * 4,
             'read_time' => 5,
-            'cover' => 'assets/img/covers/travel.svg',
+            'cover' => 'assets/img/covers/travel.webp',
             'likes' => 191,
             'comments' => 8,
         ],
@@ -699,7 +727,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-3', 'name' => 'Nusrat Jahan', 'handle' => 'nusratjahan'],
             'published_at' => time() - 86400 * 8,
             'read_time' => 4,
-            'cover' => 'assets/img/covers/life.svg',
+            'cover' => 'assets/img/covers/lifestyle.webp',
             'likes' => 156,
             'comments' => 6,
         ],
@@ -715,7 +743,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-4', 'name' => 'Ayesha Rahman', 'handle' => 'ayesha'],
             'published_at' => time() - 86400,
             'read_time' => 5,
-            'cover' => 'assets/img/covers/minimal.svg',
+            'cover' => 'assets/img/covers/self-improvement.webp',
             'likes' => 98,
             'comments' => 4,
         ],
@@ -731,7 +759,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-5', 'name' => 'Tanvir Rahman', 'handle' => 'tanvir'],
             'published_at' => time() - 86400 * 3,
             'read_time' => 7,
-            'cover' => 'assets/img/covers/remote.svg',
+            'cover' => 'assets/img/covers/business.webp',
             'likes' => 122,
             'comments' => 9,
         ],
@@ -747,7 +775,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-6', 'name' => 'Farhan Karim', 'handle' => 'farhan'],
             'published_at' => time() - 86400 * 6,
             'read_time' => 6,
-            'cover' => 'assets/img/covers/ethics.svg',
+            'cover' => 'assets/img/covers/technology.webp',
             'likes' => 203,
             'comments' => 14,
         ],

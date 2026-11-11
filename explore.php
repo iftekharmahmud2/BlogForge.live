@@ -57,7 +57,7 @@ require __DIR__ . '/partials/header.php';
                     </div>
                 </div>
                 <a href="<?= e(app_url('article.php?id=' . urlencode((string)($p['slug'] ?? $p['_id'])))) ?>" class="shrink-0 w-full sm:w-44 h-36 rounded-2xl overflow-hidden bg-gray-100 shadow-sm group-hover:shadow transition">
-                    <img src="<?= e(cover_url($p['cover'] ?? null)) ?>" alt="<?= e($p['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    <img src="<?= e(cover_url($p['cover'] ?? null, $p['category'] ?? null)) ?>" alt="<?= e($p['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                 </a>
             </article>
         <?php endforeach; ?>
