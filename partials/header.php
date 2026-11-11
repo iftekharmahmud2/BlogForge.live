@@ -11,6 +11,9 @@ $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php');
     <title><?= e($pageTitle) ?></title>
     <meta name="description" content="BlogForge.live — read, write and share meaningful stories with a modern, distraction-free publishing platform.">
     <link rel="icon" href="/assets/img/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/style.css">
     <!-- Production Tailwind CDN Fallback -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +22,10 @@ $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php');
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+                        serif: ['"Instrument Serif"', 'Georgia', 'serif'],
+                    },
                     colors: {
                         brand: {
                             50: '#fff7ed',
@@ -42,7 +49,7 @@ $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php');
     </script>
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col bg-[#fffdfa] text-[#11151b]">
-<header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 text-[#11151b] transition-colors">
+<header class="sticky top-0 z-50 bg-[#fffdfa]/90 backdrop-blur-md border-b border-[#e9e5df]/80 text-[#11151b] transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         <!-- Brand Logo & Name -->
         <a class="flex items-center gap-2.5 shrink-0 group" href="<?= e(app_url()) ?>">
