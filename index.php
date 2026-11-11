@@ -18,145 +18,136 @@ if (empty($latestStories)) {
     $latestStories = sample_posts();
 }
 
-$heroStory = $featuredStories[0] ?? null;
+$leadStory = $featuredStories[0] ?? null;
 $sideStories = array_slice($featuredStories, 1, 2);
 
 require __DIR__ . '/partials/header.php';
 ?>
 
-<!-- SECTION 1: EDITORIAL HERO SHOWCASE -->
-<section class="relative overflow-hidden bg-[#fffdfa] pt-14 pb-20 sm:pt-20 sm:pb-28 border-b border-[#e9e5df]">
-    <!-- Subtle Editorial Dot Matrix & Warm Atmospheric Glow -->
-    <div class="absolute inset-0 bg-[radial-gradient(#e5dfd5_1px,transparent_1px)] [background-size:24px_24px] opacity-45 [mask-image:radial-gradient(ellipse_80%_70%_at_50%_30%,#000_55%,transparent_100%)] pointer-events-none"></div>
-    <div class="absolute -top-24 right-0 w-[34rem] h-[34rem] bg-orange-200/35 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute bottom-0 -left-24 w-96 h-96 bg-amber-100/40 rounded-full blur-3xl pointer-events-none"></div>
+<!-- SECTION 1: REDESIGNED SIGNATURE OBSIDIAN HERO STAGE -->
+<section class="bg-[#fffdfa] pt-6 sm:pt-10 pb-14 sm:pb-20 border-b border-[#e9e5df]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Architectural Dark Obsidian Showcase Card -->
+        <div class="relative rounded-[28px] sm:rounded-[36px] bg-[#0b0d10] text-white overflow-hidden border border-black/15 shadow-[0_32px_80px_-20px_rgba(11,13,16,0.4)]">
+            <!-- Sculpted Studio Rim-Light Behind the 3D Emblem -->
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_78%_50%,rgba(255,107,19,0.22),rgba(255,138,51,0.06)_42%,transparent_72%)] pointer-events-none"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:28px_28px] opacity-50 [mask-image:radial-gradient(ellipse_75%_70%_at_65%_50%,#000_40%,transparent_100%)] pointer-events-none"></div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 items-center gap-12 lg:gap-14">
-            
-            <!-- Left Column: Editorial Headline & Clear Actions -->
-            <div class="lg:col-span-6 flex flex-col items-start text-left">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#e9e5df] shadow-sm text-xs font-semibold text-gray-700 mb-7">
-                    <span class="w-2 h-2 rounded-full bg-[#ff6b13]"></span>
-                    <span>Independent Publishing · Zero Paywalls</span>
-                </div>
-
-                <h1 class="text-5xl sm:text-6xl lg:text-[4.25rem] font-extrabold tracking-tight text-[#11151b] leading-[1.04] mb-6">
-                    Turn quiet ideas into lasting
-                    <span class="font-serif italic font-normal text-[#ff6b13] tracking-normal">impact.</span>
-                </h1>
-
-                <p class="text-base sm:text-xl text-gray-600 max-w-xl leading-relaxed mb-9 font-normal">
-                    A calm, distraction-free home for thoughtful essays, technical deep dives, and independent voices. Write visually without clutter, publish in seconds.
-                </p>
-
-                <!-- Focused Dual CTAs -->
-                <div class="flex flex-wrap items-center gap-3.5 sm:gap-4 mb-10">
-                    <?php if ($user): ?>
-                        <a class="inline-flex items-center justify-center gap-2 bg-[#11151b] hover:bg-[#ff6b13] text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-full shadow-sm hover:shadow-md transition-all duration-200" href="<?= e(app_url('explore.php')) ?>">
-                            <span>Start reading</span>
-                            <span aria-hidden="true">→</span>
-                        </a>
-                        <a class="inline-flex items-center justify-center gap-2 bg-white hover:bg-[#fbfaf8] text-[#11151b] border border-[#e9e5df] hover:border-gray-400 font-semibold text-sm sm:text-base px-6 py-3.5 rounded-full transition-all" href="<?= e(app_url('write.php')) ?>">
-                            <span>Write a story</span>
-                        </a>
-                    <?php else: ?>
-                        <a class="inline-flex items-center justify-center gap-2 bg-[#11151b] hover:bg-[#ff6b13] text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-full shadow-sm hover:shadow-md transition-all duration-200" href="<?= e(app_url('auth.php?mode=register')) ?>">
-                            <span>Get started free</span>
-                            <span aria-hidden="true">→</span>
-                        </a>
-                        <a class="inline-flex items-center justify-center gap-2 bg-white hover:bg-[#fbfaf8] text-[#11151b] border border-[#e9e5df] hover:border-gray-400 font-semibold text-sm sm:text-base px-6 py-3.5 rounded-full transition-all" href="<?= e(app_url('write.php')) ?>">
-                            <span>Write a story</span>
-                        </a>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Clean Social Proof Strip -->
-                <div class="flex flex-wrap items-center gap-4 pt-6 border-t border-[#e9e5df] w-full max-w-lg">
-                    <div class="flex -space-x-2.5">
-                        <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff6b13] text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-[#fffdfa]">SA</span>
-                        <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-orange-400 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-[#fffdfa]">MH</span>
-                        <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-stone-800 to-stone-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-[#fffdfa]">NJ</span>
-                        <span class="w-8 h-8 rounded-full bg-orange-100 text-[#ff6b13] text-[10px] font-extrabold flex items-center justify-center ring-2 ring-[#fffdfa]">+15k</span>
-                    </div>
-                    <div class="text-xs sm:text-sm text-gray-600 leading-snug">
-                        <strong class="font-semibold text-[#11151b] block">Trusted by independent writers</strong>
-                        <span>100% free · Visual WYSIWYG · No ad clutter</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Live Editorial Showcase Card Composition -->
-            <div class="lg:col-span-6 relative lg:pl-4">
-                <!-- Floating Dark Studio Toolbar Badge (Top-Left) -->
-                <div class="hidden sm:flex items-center gap-3 absolute -top-5 -left-2 z-20 bg-[#11151b] text-white px-4 py-2.5 rounded-2xl shadow-xl border border-white/10">
-                    <div class="flex items-center gap-1.5 text-xs font-semibold text-neutral-300 pr-3 border-r border-neutral-700">
-                        <span class="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center font-bold text-white">B</span>
-                        <span class="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center italic font-serif">I</span>
-                        <span class="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center text-[11px]">H2</span>
-                        <span class="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center font-serif">“</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 text-xs font-medium text-orange-300">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>Visual Editor Ready</span>
-                    </div>
-                </div>
-
-                <?php if ($heroStory): ?>
-                    <!-- Primary Featured Story Frame -->
-                    <a href="<?= e(app_url('article.php?id=' . urlencode((string)($heroStory['slug'] ?? $heroStory['_id'])))) ?>" class="block group bg-white border border-[#e9e5df] rounded-[28px] p-4 sm:p-5 shadow-[0_24px_60px_-15px_rgba(17,21,27,0.1)] hover:shadow-[0_28px_70px_-15px_rgba(255,107,19,0.16)] hover:border-orange-200 transition-all duration-300">
-                        <div class="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#f7f4ef] mb-5">
-                            <img src="<?= e(cover_url($heroStory['cover'] ?? null)) ?>" alt="<?= e($heroStory['title']) ?>" class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500">
-                            <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 backdrop-blur-sm text-[#11151b] text-[11px] font-bold uppercase tracking-wider shadow-sm">
-                                <span class="w-1.5 h-1.5 rounded-full bg-[#ff6b13]"></span>
-                                Featured Essay
-                            </span>
-                        </div>
-
-                        <div class="px-1.5 pb-1">
-                            <div class="flex items-center justify-between text-xs text-gray-500 mb-2.5">
-                                <span class="font-bold text-[#ff6b13] uppercase tracking-wider"><?= e($heroStory['category'] ?? 'General') ?></span>
-                                <span><?= e((string)($heroStory['read_time'] ?? 5)) ?> min read</span>
-                            </div>
-
-                            <h2 class="text-xl sm:text-2xl font-extrabold text-[#11151b] group-hover:text-[#ff6b13] transition leading-snug line-clamp-2 mb-2.5">
-                                <?= e($heroStory['title']) ?>
-                            </h2>
-
-                            <p class="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-5">
-                                <?= e($heroStory['excerpt'] ?? '') ?>
-                            </p>
-
-                            <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs">
-                                        <?= e(initials($heroStory['author']['name'] ?? 'Author')) ?>
-                                    </span>
-                                    <div>
-                                        <span class="block text-xs font-bold text-[#11151b]"><?= e($heroStory['author']['name'] ?? 'Author') ?></span>
-                                        <span class="block text-[11px] text-gray-400"><?= e(format_date($heroStory['published_at'] ?? time())) ?></span>
-                                    </div>
-                                </div>
-                                <span class="inline-flex items-center gap-1 text-xs font-bold text-[#11151b] group-hover:text-[#ff6b13] group-hover:translate-x-1 transition-all">
-                                    Read essay <span aria-hidden="true">→</span>
-                                </span>
-                            </div>
-                        </div>
-                    </a>
-                <?php endif; ?>
-
-                <!-- Floating Reader Reach Pill (Bottom-Right) -->
-                <div class="hidden sm:flex items-center gap-2.5 absolute -bottom-5 right-4 z-20 bg-white/95 backdrop-blur-md border border-[#e9e5df] px-4 py-2.5 rounded-2xl shadow-lg">
-                    <span class="w-8 h-8 rounded-xl bg-orange-50 text-[#ff6b13] flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 items-center gap-10 lg:gap-6 px-7 py-12 sm:px-12 sm:py-16 lg:px-16 lg:py-20">
+                
+                <!-- Left Column: Editorial Headline & Clear Actions -->
+                <div class="lg:col-span-7 flex flex-col items-start text-left">
+                    <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-[#ff9a3c] mb-6">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#ff6b13] animate-pulse"></span>
+                        BlogForge.live · Open Publishing
                     </span>
-                    <div>
-                        <b class="block text-xs font-extrabold text-[#11151b]">250K+ Readers</b>
-                        <span class="block text-[11px] text-gray-500">Reading ad-free every month</span>
+
+                    <h1 class="text-4xl sm:text-6xl lg:text-[4.5rem] font-extrabold tracking-tight leading-[1.03] text-white mb-6">
+                        Ideas<br>
+                        into <span class="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-[#ff7b22] via-[#ff9a3c] to-[#ffd08a] pr-2">Impact.</span>
+                    </h1>
+
+                    <p class="text-base sm:text-lg lg:text-xl text-neutral-300 max-w-xl leading-relaxed mb-9 font-normal">
+                        A home for curious minds, bold ideas, and meaningful stories. Read deeply, write visually, and share your voice with a growing community of thinkers.
+                    </p>
+
+                    <!-- Action Row -->
+                    <div class="flex flex-wrap items-center gap-3.5 sm:gap-4 mb-9">
+                        <?php if ($user): ?>
+                            <a class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff6b13] to-[#ff9233] text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-full shadow-[0_12px_32px_-8px_rgba(255,107,19,0.6)] hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200" href="<?= e(app_url('explore.php')) ?>">
+                                <span>Start reading</span>
+                                <span aria-hidden="true">→</span>
+                            </a>
+                            <a class="inline-flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/15 font-semibold text-sm sm:text-base px-6 py-3.5 rounded-full backdrop-blur-sm transition-all" href="<?= e(app_url('write.php')) ?>">
+                                Write a story
+                            </a>
+                            <a class="inline-flex items-center justify-center text-neutral-200 hover:text-[#ff9a3c] font-medium text-sm sm:text-base px-3 py-2 transition" href="<?= e(app_url('drafts.php')) ?>">
+                                My Drafts
+                            </a>
+                        <?php else: ?>
+                            <a class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff6b13] to-[#ff9233] text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-full shadow-[0_12px_32px_-8px_rgba(255,107,19,0.6)] hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200" href="<?= e(app_url('auth.php?mode=register')) ?>">
+                                <span>Get started</span>
+                                <span aria-hidden="true">→</span>
+                            </a>
+                            <a class="inline-flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/15 font-semibold text-sm sm:text-base px-6 py-3.5 rounded-full backdrop-blur-sm transition-all" href="<?= e(app_url('write.php')) ?>">
+                                Write a story
+                            </a>
+                            <a class="inline-flex items-center justify-center text-neutral-200 hover:text-[#ff9a3c] font-medium text-sm sm:text-base px-3 py-2 transition" href="<?= e(app_url('explore.php')) ?>">
+                                Browse stories
+                            </a>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Crisp High-Contrast Trust Strip -->
+                    <div class="flex flex-wrap items-center gap-x-6 gap-y-2.5 pt-6 border-t border-white/10 w-full max-w-lg text-xs sm:text-sm text-neutral-300">
+                        <span class="inline-flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            </span>
+                            100% Free
+                        </span>
+                        <span class="inline-flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            </span>
+                            Zero Paywalls
+                        </span>
+                        <span class="inline-flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            </span>
+                            Visual WYSIWYG
+                        </span>
                     </div>
                 </div>
-            </div>
 
+                <!-- Right Column: Studio-Lit 3D Signature Emblem -->
+                <div class="lg:col-span-5 relative flex flex-col items-center justify-center lg:justify-end">
+                    <div class="relative group flex items-center justify-center">
+                        <!-- Focused Backlight Glow -->
+                        <div class="absolute inset-4 rounded-full bg-gradient-to-tr from-[#ff6b13]/30 via-amber-500/15 to-transparent blur-3xl group-hover:scale-110 transition-transform duration-700 pointer-events-none"></div>
+                        <img src="/assets/img/blogforge-icon.png" alt="BlogForge 3D Emblem" class="relative w-56 sm:w-72 lg:w-[23rem] max-w-full object-contain drop-shadow-[0_28px_45px_rgba(0,0,0,0.85)] select-none group-hover:scale-[1.03] transition-transform duration-500">
+                    </div>
+
+                    <!-- Clean Floating Glass Tag Under Emblem -->
+                    <div class="mt-6 inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.06] border border-white/10 backdrop-blur-md text-xs text-neutral-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span><strong class="text-white font-semibold">15,000+</strong> stories · <strong class="text-white font-semibold">250K+</strong> monthly readers</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Subtle Bridge Highlight Cards Underneath Hero Stage -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+            <div class="bg-white border border-[#e9e5df] rounded-2xl px-5 py-4 flex items-center gap-3.5 shadow-sm">
+                <span class="w-10 h-10 rounded-xl bg-orange-50 text-[#ff6b13] flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </span>
+                <div>
+                    <b class="block text-sm font-bold text-[#11151b]">Rich Visual Editor</b>
+                    <span class="block text-xs text-gray-500">Format seamlessly with zero raw markdown</span>
+                </div>
+            </div>
+            <div class="bg-white border border-[#e9e5df] rounded-2xl px-5 py-4 flex items-center gap-3.5 shadow-sm">
+                <span class="w-10 h-10 rounded-xl bg-orange-50 text-[#ff6b13] flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </span>
+                <div>
+                    <b class="block text-sm font-bold text-[#11151b]">Auto-Optimized Media</b>
+                    <span class="block text-xs text-gray-500">Instant ~120KB WebP cover compression</span>
+                </div>
+            </div>
+            <div class="bg-white border border-[#e9e5df] rounded-2xl px-5 py-4 flex items-center gap-3.5 shadow-sm">
+                <span class="w-10 h-10 rounded-xl bg-orange-50 text-[#ff6b13] flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                </span>
+                <div>
+                    <b class="block text-sm font-bold text-[#11151b]">Ad-Free Reading</b>
+                    <span class="block text-xs text-gray-500">Clean typography built for deep focus</span>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -188,36 +179,36 @@ require __DIR__ . '/partials/header.php';
 
         <!-- Asymmetric Magazine Grid (1 Lead + 2 Stacked) -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <?php if ($heroStory): ?>
+            <?php if ($leadStory): ?>
                 <article class="lg:col-span-7 bg-white border border-[#e9e5df] rounded-3xl overflow-hidden flex flex-col hover:border-gray-300 hover:shadow-md transition-all group">
-                    <a href="<?= e(app_url('article.php?id=' . urlencode((string)($heroStory['slug'] ?? $heroStory['_id'])))) ?>" class="block w-full aspect-[16/9] overflow-hidden bg-gray-100">
-                        <img src="<?= e(cover_url($heroStory['cover'] ?? null)) ?>" alt="<?= e($heroStory['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    <a href="<?= e(app_url('article.php?id=' . urlencode((string)($leadStory['slug'] ?? $leadStory['_id'])))) ?>" class="block w-full aspect-[16/9] overflow-hidden bg-gray-100">
+                        <img src="<?= e(cover_url($leadStory['cover'] ?? null)) ?>" alt="<?= e($leadStory['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     </a>
                     <div class="p-6 sm:p-8 flex flex-col flex-1 justify-between">
                         <div>
                             <div class="flex items-center gap-3 text-xs mb-3">
                                 <span class="px-2.5 py-0.5 rounded-full font-semibold bg-orange-50 text-[#ff6b13]">
-                                    <?= e($heroStory['category'] ?? 'General') ?>
+                                    <?= e($leadStory['category'] ?? 'General') ?>
                                 </span>
-                                <span class="text-gray-400 font-medium"><?= e((string)($heroStory['read_time'] ?? 5)) ?> min read</span>
+                                <span class="text-gray-400 font-medium"><?= e((string)($leadStory['read_time'] ?? 5)) ?> min read</span>
                             </div>
-                            <a href="<?= e(app_url('article.php?id=' . urlencode((string)($heroStory['slug'] ?? $heroStory['_id'])))) ?>" class="block mb-3">
+                            <a href="<?= e(app_url('article.php?id=' . urlencode((string)($leadStory['slug'] ?? $leadStory['_id'])))) ?>" class="block mb-3">
                                 <h3 class="text-2xl sm:text-3xl font-extrabold text-[#11151b] group-hover:text-[#ff6b13] transition leading-tight">
-                                    <?= e($heroStory['title']) ?>
+                                    <?= e($leadStory['title']) ?>
                                 </h3>
                             </a>
                             <p class="text-gray-600 text-sm sm:text-base line-clamp-3 leading-relaxed mb-6">
-                                <?= e($heroStory['excerpt'] ?? '') ?>
+                                <?= e($leadStory['excerpt'] ?? '') ?>
                             </p>
                         </div>
                         <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
                             <div class="flex items-center gap-2.5">
                                 <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs">
-                                    <?= e(initials($heroStory['author']['name'] ?? 'Author')) ?>
+                                    <?= e(initials($leadStory['author']['name'] ?? 'Author')) ?>
                                 </span>
-                                <span class="text-xs font-bold text-[#11151b]"><?= e($heroStory['author']['name'] ?? 'Author') ?></span>
+                                <span class="text-xs font-bold text-[#11151b]"><?= e($leadStory['author']['name'] ?? 'Author') ?></span>
                             </div>
-                            <span class="text-xs text-gray-400"><?= e(format_date($heroStory['published_at'] ?? time())) ?></span>
+                            <span class="text-xs text-gray-400"><?= e(format_date($leadStory['published_at'] ?? time())) ?></span>
                         </div>
                     </div>
                 </article>
@@ -288,7 +279,7 @@ require __DIR__ . '/partials/header.php';
                     </div>
                     <h3 class="text-lg font-bold text-[#11151b] mb-2">Distraction-Free</h3>
                     <p class="text-gray-600 text-sm leading-relaxed">
-                        Zero popups, autoplay banners, or paywall walls. Editorial typography calibrated for long-form focus.
+                        Zero popups, autoplay banners, or paywalls. Editorial typography calibrated for long-form focus.
                     </p>
                 </div>
 
