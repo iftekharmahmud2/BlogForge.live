@@ -470,8 +470,8 @@ function reading_time(string $body): int
 
 /**
  * Safely render story body content to HTML.
- * Handles both visual WYSIWYG HTML output and traditional Markdown.
- * Strict tag/attribute whitelisting prevents any Cross-Site Scripting (XSS).
+ * Handles visual WYSIWYG HTML output, mixed content, and traditional Markdown.
+ * Auto-heals previously double-escaped tags and strips proprietary data attributes.
  */
 function body_to_html(string $body): string
 {
@@ -480,26 +480,30 @@ function body_to_html(string $body): string
         return '';
     }
 
-    // Detect if content is already HTML formatted (from WYSIWYG editor)
-    $hasHtmlTags = (bool)preg_match('/<\s*(p|h2|h3|h4|blockquote|ul|ol|li|div|span|strong|em|img|a)\b/i', $body);
+    // 1. Auto-heal previously corrupted/double-escaped HTML entities (e.g. &lt;b ...&gt; or &lt;p&gt;)
+    if (preg_match('/&lt;\s*\/?\s*(p|h[1-6]|blockquote|ul|ol|li|div|span|strong|b|em|i|u|s|code|pre|img|a|br|hr)\b/i', $body)) {
+        $body = html_entity_decode($body, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    // 2. Comprehensive HTML tag detection (includes b, strong, i, u, headings, lists, etc.)
+    $hasHtmlTags = (bool)preg_match('/<\s*\/?\s*(p|h[1-6]|blockquote|ul|ol|li|div|span|strong|b|em|i|u|s|code|pre|img|a|br|hr)\b/i', $body);
 
     if ($hasHtmlTags) {
         // Strip non-whitelisted tags
-        $allowedTags = '<h2><h3><h4><p><blockquote><strong><b><em><i><u><s><code><pre><ul><ol><li><a><img><br><hr>';
+        $allowedTags = '<h2><h3><h4><p><blockquote><strong><b><em><i><u><s><code><pre><ul><ol><li><a><img><br><hr><div><span>';
         $cleaned = strip_tags($body, $allowedTags);
 
-        // Sanitize attributes on allowed tags (block onclick, onerror, javascript: URIs, etc.)
+        // Sanitize attributes: only allow safe href on <a> and safe src/alt on <img>.
+        // Strips all other attributes (e.g. data-path-to-node, data-index-in-node, inline styles, onclick)
         $cleaned = preg_replace_callback('/<([a-z0-9]+)([^>]*)>/i', function ($matches) {
             $tag = strtolower($matches[1]);
             $attrs = $matches[2];
 
-            // Reconstruct safe attributes
             $safeAttrs = [];
 
             if ($tag === 'a') {
                 if (preg_match('/href="([^"]+)"/i', $attrs, $m) || preg_match("/href='([^']+)'/i", $attrs, $m)) {
                     $url = trim($m[1]);
-                    // Block protocol-relative URLs (//evil.com), backslash tricks (/\evil.com), and javascript: URIs
                     $isSafeUrl = (bool)preg_match('~^https?://~i', $url) ||
                                  (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_starts_with($url, '/\\'));
                     if ($isSafeUrl) {
@@ -523,10 +527,15 @@ function body_to_html(string $body): string
             return '<' . $tag . ($safeAttrs ? ' ' . implode(' ', $safeAttrs) : '') . '>';
         }, $cleaned);
 
+        // Also convert any raw markdown that was typed/pasted inside HTML paragraphs
+        $cleaned = preg_replace('/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $cleaned) ?? $cleaned;
+        $cleaned = preg_replace('/(?<!\*)\*([^*]+)\*(?!\*)/', '<em>$1</em>', $cleaned) ?? $cleaned;
+        $cleaned = preg_replace('/`([^`]+)`/', '<code>$1</code>', $cleaned) ?? $cleaned;
+
         return $cleaned;
     }
 
-    // Markdown processing fallback
+    // 3. Traditional Markdown processing fallback for plain text stories
     $blocks = preg_split('/\r\n\r\n|\n\n/', $body) ?: [];
     $htmlParts = [];
 

@@ -127,7 +127,7 @@ require __DIR__ . '/partials/header.php';
                 ?></div>
 
                 <!-- Hidden Input holding formatted content for form submission -->
-                <textarea id="body-hidden-input" name="body" class="hidden"><?= e($currentBody) ?></textarea>
+                <textarea id="body-hidden-input" name="body" class="hidden"><?= e(!empty($currentBody) ? body_to_html($currentBody) : '') ?></textarea>
 
                 <!-- Metadata & Cover Image Section -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-gray-100">

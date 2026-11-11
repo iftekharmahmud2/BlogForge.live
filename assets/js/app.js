@@ -331,6 +331,79 @@
             if (wysiwyg) {
                 wysiwyg.addEventListener('input', syncBody);
                 wysiwyg.addEventListener('blur', syncBody);
+
+                // Smart Paste Handler: Strips proprietary data attributes (data-*, styles, classes)
+                // and automatically renders markdown (**bold**, ## headings) into clean visual HTML
+                wysiwyg.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const clipboard = e.clipboardData;
+                    if (!clipboard) return;
+
+                    const html = clipboard.getData('text/html');
+                    const text = clipboard.getData('text/plain');
+
+                    if (html && html.trim()) {
+                        // Parse clipboard HTML with DOMParser
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+
+                        // Remove dangerous and non-content tags
+                        doc.querySelectorAll('script, style, meta, link, noscript, iframe').forEach((el) => el.remove());
+
+                        // Strip all proprietary attributes (e.g. data-path-to-node, data-index-in-node, style, class)
+                        doc.querySelectorAll('*').forEach((el) => {
+                            const tag = el.tagName.toLowerCase();
+                            const keepAttrs = tag === 'a' ? ['href', 'target', 'rel'] : (tag === 'img' ? ['src', 'alt'] : []);
+                            [...el.attributes].forEach((attr) => {
+                                if (!keepAttrs.includes(attr.name.toLowerCase())) {
+                                    el.removeAttribute(attr.name);
+                                }
+                            });
+                            // Unwrap useless empty span/font tags
+                            if (['span', 'font'].includes(tag) && el.attributes.length === 0) {
+                                el.replaceWith(...el.childNodes);
+                            }
+                        });
+
+                        let cleanHtml = doc.body.innerHTML;
+                        // Auto-convert any markdown bold inside pasted HTML
+                        cleanHtml = cleanHtml
+                            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                            .replace(/__(.*?)__/g, '<b>$1</b>');
+
+                        document.execCommand('insertHTML', false, cleanHtml);
+                    } else if (text) {
+                        // Plain text: convert markdown to HTML if markdown syntax is detected
+                        if (/(\*\*|__|\#\#|\*|_|\[.*\]\(.*\))/.test(text)) {
+                            const converted = text
+                                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                                .replace(/^# (.*$)/gim, '<h2>$1</h2>')
+                                .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+                                .replace(/\*\*(.*?)\*\*/gim, '<b>$1</b>')
+                                .replace(/__(.*?)__/gim, '<b>$1</b>')
+                                .replace(/\*(.*?)\*/gim, '<i>$1</i>')
+                                .replace(/_(.*?)_/gim, '<i>$1</i>')
+                                .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>')
+                                .split(/\r?\n\r?\n/)
+                                .map((p) => p.trim())
+                                .filter(Boolean)
+                                .map((p) => (p.startsWith('<h') || p.startsWith('<blockquote') ? p : `<p>${p.replace(/\r?\n/g, '<br>')}</p>`))
+                                .join('');
+                            document.execCommand('insertHTML', false, converted);
+                        } else {
+                            // Normal plain text paragraphs
+                            const paras = text.split(/\r?\n\r?\n/).map((p) => p.trim()).filter(Boolean);
+                            if (paras.length > 1) {
+                                const htmlParas = paras.map((p) => `<p>${escapeHtml(p).replace(/\r?\n/g, '<br>')}</p>`).join('');
+                                document.execCommand('insertHTML', false, htmlParas);
+                            } else {
+                                document.execCommand('insertText', false, text);
+                            }
+                        }
+                    }
+                    syncBody();
+                });
             }
 
             // WYSIWYG Formatting Toolbar commands
