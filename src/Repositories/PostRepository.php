@@ -67,6 +67,7 @@ final class PostRepository
                 'id' => (string)$user['id'],
                 'name' => (string)$user['name'],
                 'handle' => (string)($user['handle'] ?? ''),
+                'avatar' => (string)($user['avatar'] ?? ''),
             ],
             'cover' => $cover,
             'read_time' => reading_time($body),
@@ -217,18 +218,56 @@ final class PostRepository
     }
 
     /**
-     * Get all stories by a specific author ID.
+     * Get stories by a specific author ID or handle.
      */
-    public function forAuthor(string $authorId, int $limit = 50): array
+    public function forAuthor(string $authorId, int $limit = 50, bool $publishedOnly = false, string $authorHandle = ''): array
     {
+        $limit = max(1, min(100, $limit));
+        $authorId = trim($authorId);
+        $authorHandle = ltrim(trim($authorHandle), '@');
+
         $db = Database::connection();
         if (!$db) {
-            return [];
+            $matches = [];
+            foreach (sample_posts() as $sp) {
+                $a = $sp['author'] ?? [];
+                $idMatch = ($authorId !== '' && (string)($a['id'] ?? '') === $authorId);
+                $handleMatch = ($authorHandle !== '' && strcasecmp((string)($a['handle'] ?? ''), $authorHandle) === 0);
+                if ($idMatch || $handleMatch) {
+                    $matches[] = $sp;
+                }
+            }
+            return array_slice($matches, 0, $limit);
+        }
+
+        $filter = [];
+        if (oid($authorId)) {
+            $filter['author.id'] = $authorId;
+        } else {
+            $or = [];
+            if ($authorId !== '') {
+                $or[] = ['author.id' => $authorId];
+            }
+            if ($authorHandle !== '' && preg_match('/^[a-zA-Z0-9_.\-]{1,50}$/', $authorHandle)) {
+                $or[] = ['author.handle' => new \MongoDB\BSON\Regex('^' . preg_quote($authorHandle, '/') . '$', 'i')];
+            }
+            if (empty($or)) {
+                return [];
+            }
+            if (count($or) === 1) {
+                $filter += $or[0];
+            } else {
+                $filter['$or'] = $or;
+            }
+        }
+
+        if ($publishedOnly) {
+            $filter['status'] = 'published';
         }
 
         $cursor = $db->posts->find(
-            ['author.id' => $authorId],
-            ['sort' => ['created_at' => -1], 'limit' => max(1, min(100, $limit))]
+            $filter,
+            ['sort' => ['created_at' => -1], 'limit' => $limit]
         );
 
         return array_map('normalize_mongo', iterator_to_array($cursor, false));

@@ -38,7 +38,10 @@ if ($editId !== '') {
 
 $categories = ['Technology', 'Lifestyle', 'Business', 'Education', 'Health', 'Travel', 'Culture', 'Self Improvement'];
 $currentCover = (string)($post['cover'] ?? '');
-if (preg_match('~^/?assets/img/covers/[^/]+\.(svg|webp)$~i', $currentCover)) {
+if (
+    preg_match('~^/?assets/img/covers/[^/]+\.(svg|webp)$~i', $currentCover) ||
+    preg_match('~^https?://([^/]+\.)?(fbcdn\.net|fbsbx\.com)/~i', $currentCover)
+) {
     $currentCover = '';
 }
 $currentBody = (string)($post['body'] ?? '');

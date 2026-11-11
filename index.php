@@ -182,7 +182,7 @@ require __DIR__ . '/partials/header.php';
             <?php if ($leadStory): ?>
                 <article class="lg:col-span-7 bg-white border border-[#e9e5df] rounded-3xl overflow-hidden flex flex-col hover:border-gray-300 hover:shadow-md transition-all group">
                     <a href="<?= e(app_url('article.php?id=' . urlencode((string)($leadStory['slug'] ?? $leadStory['_id'])))) ?>" class="block w-full aspect-[16/9] overflow-hidden bg-gray-100">
-                        <img src="<?= e(cover_url($leadStory['cover'] ?? null, $leadStory['category'] ?? null)) ?>" alt="<?= e($leadStory['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                        <img src="<?= e(cover_url($leadStory['cover'] ?? null, $leadStory['category'] ?? null)) ?>" data-fallback-cover="<?= e(category_cover($leadStory['category'] ?? null)) ?>" alt="<?= e($leadStory['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     </a>
                     <div class="p-6 sm:p-8 flex flex-col flex-1 justify-between">
                         <div>
@@ -202,12 +202,12 @@ require __DIR__ . '/partials/header.php';
                             </p>
                         </div>
                         <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
-                            <div class="flex items-center gap-2.5">
+                            <a href="<?= e(profile_url($leadStory['author'] ?? [])) ?>" class="flex items-center gap-2.5 group/author">
                                 <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs">
                                     <?= e(initials($leadStory['author']['name'] ?? 'Author')) ?>
                                 </span>
-                                <span class="text-xs font-bold text-[#11151b]"><?= e($leadStory['author']['name'] ?? 'Author') ?></span>
-                            </div>
+                                <span class="text-xs font-bold text-[#11151b] group-hover/author:text-[#ff6b13] transition"><?= e($leadStory['author']['name'] ?? 'Author') ?></span>
+                            </a>
                             <span class="text-xs text-gray-400"><?= e(format_date($leadStory['published_at'] ?? time())) ?></span>
                         </div>
                     </div>
@@ -218,7 +218,7 @@ require __DIR__ . '/partials/header.php';
                 <?php foreach ($sideStories as $story): ?>
                     <article class="flex-1 bg-white border border-[#e9e5df] rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-5 hover:border-gray-300 hover:shadow-md transition-all group">
                         <a href="<?= e(app_url('article.php?id=' . urlencode((string)($story['slug'] ?? $story['_id'])))) ?>" class="block w-full sm:w-40 lg:w-full xl:w-40 aspect-[16/10] sm:aspect-square lg:aspect-[16/9] xl:aspect-square rounded-2xl overflow-hidden bg-gray-100 shrink-0">
-                            <img src="<?= e(cover_url($story['cover'] ?? null, $story['category'] ?? null)) ?>" alt="<?= e($story['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                            <img src="<?= e(cover_url($story['cover'] ?? null, $story['category'] ?? null)) ?>" data-fallback-cover="<?= e(category_cover($story['category'] ?? null)) ?>" alt="<?= e($story['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                         </a>
                         <div class="flex flex-col justify-between flex-1 min-w-0">
                             <div>
@@ -236,7 +236,7 @@ require __DIR__ . '/partials/header.php';
                                 </p>
                             </div>
                             <div class="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
-                                <span class="font-semibold text-[#11151b] truncate"><?= e($story['author']['name'] ?? 'Author') ?></span>
+                                <a href="<?= e(profile_url($story['author'] ?? [])) ?>" class="font-semibold text-[#11151b] hover:text-[#ff6b13] transition truncate"><?= e($story['author']['name'] ?? 'Author') ?></a>
                                 <span class="text-gray-400 shrink-0"><?= e(format_date($story['published_at'] ?? time())) ?></span>
                             </div>
                         </div>
@@ -364,12 +364,12 @@ require __DIR__ . '/partials/header.php';
                     </div>
 
                     <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
+                        <a href="<?= e(profile_url($story['author'] ?? [])) ?>" class="flex items-center gap-2.5 group/author">
                             <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff7b22] text-white flex items-center justify-center font-bold text-[10px]">
                                 <?= e(initials($story['author']['name'] ?? 'Author')) ?>
                             </span>
-                            <span class="text-xs font-semibold text-gray-800"><?= e($story['author']['name'] ?? 'Author') ?></span>
-                        </div>
+                            <span class="text-xs font-semibold text-gray-800 group-hover/author:text-[#ff6b13] transition"><?= e($story['author']['name'] ?? 'Author') ?></span>
+                        </a>
                         <a href="<?= e(app_url('article.php?id=' . urlencode((string)($story['slug'] ?? $story['_id'])))) ?>" class="text-xs font-bold text-[#ff6b13] hover:underline">
                             Read story →
                         </a>

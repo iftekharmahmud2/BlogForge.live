@@ -198,9 +198,9 @@ final class Auth
         ]]);
 
         // Keep denormalised author info on stories & comments in sync
-        $authorSet = ['author.name' => $name, 'author.handle' => $handle];
+        $authorSet = ['author.name' => $name, 'author.handle' => $handle, 'author.avatar' => $avatar];
         $db->posts->updateMany(['author.id' => $userId], ['$set' => $authorSet]);
-        $db->comments->updateMany(['author.id' => $userId], ['$set' => $authorSet + ['author.avatar' => $avatar]]);
+        $db->comments->updateMany(['author.id' => $userId], ['$set' => $authorSet]);
 
         $fresh = $db->users->findOne(['_id' => $oid]);
         $session = self::sessionUser($fresh);
@@ -268,6 +268,120 @@ final class Auth
         }
 
         return $u;
+    }
+
+    /**
+     * Load a public-safe user or author/commenter profile by ID or handle.
+     * Never exposes private fields such as email or password hashes.
+     */
+    public static function findPublicUser(string $userId = '', string $handle = ''): ?array
+    {
+        $userId = trim($userId);
+        $handle = ltrim(trim($handle), '@');
+        if ($userId === '' && $handle === '') {
+            return null;
+        }
+
+        $db = Database::connection();
+        if ($db) {
+            $safeHandleRegex = ($handle !== '' && preg_match('/^[a-zA-Z0-9_.\-]{1,50}$/', $handle))
+                ? new \MongoDB\BSON\Regex('^' . preg_quote($handle, '/') . '$', 'i')
+                : null;
+
+            $userOr = [];
+            if ($oid = oid($userId)) {
+                $userOr[] = ['_id' => $oid];
+            }
+            if ($safeHandleRegex !== null) {
+                $userOr[] = ['handle' => $safeHandleRegex];
+            }
+
+            if (!empty($userOr)) {
+                $user = $db->users->findOne(count($userOr) === 1 ? $userOr[0] : ['$or' => $userOr]);
+                if ($user) {
+                    $u = normalize_mongo($user);
+                    return [
+                        'id' => (string)($u['_id'] ?? $u['id'] ?? ''),
+                        'name' => (string)($u['name'] ?? 'Author'),
+                        'handle' => (string)($u['handle'] ?? ''),
+                        'bio' => (string)($u['bio'] ?? ''),
+                        'avatar' => (string)($u['avatar'] ?? ''),
+                        'role' => (string)($u['role'] ?? 'author'),
+                        'created_at' => $u['created_at'] ?? null,
+                    ];
+                }
+            }
+
+            // Fallback for demo/seeded authors or commenters without a users collection record
+            $authorOr = [];
+            if ($userId !== '') {
+                $authorOr[] = ['author.id' => $userId];
+            }
+            if ($safeHandleRegex !== null) {
+                $authorOr[] = ['author.handle' => $safeHandleRegex];
+            }
+
+            if (!empty($authorOr)) {
+                $authorMatch = count($authorOr) === 1 ? $authorOr[0] : ['$or' => $authorOr];
+                $postMatch = $db->posts->findOne(
+                    ['status' => 'published'] + $authorMatch,
+                    ['sort' => ['published_at' => -1]]
+                );
+                if ($postMatch) {
+                    $p = normalize_mongo($postMatch);
+                    $a = $p['author'] ?? [];
+                    return [
+                        'id' => (string)($a['id'] ?? $userId),
+                        'name' => (string)($a['name'] ?? 'Author'),
+                        'handle' => (string)($a['handle'] ?? $handle),
+                        'bio' => '',
+                        'avatar' => (string)($a['avatar'] ?? ''),
+                        'role' => 'author',
+                        'created_at' => null,
+                    ];
+                }
+
+                $commentMatch = $db->comments->findOne(
+                    ['status' => 'approved'] + $authorMatch,
+                    ['sort' => ['created_at' => -1]]
+                );
+                if ($commentMatch) {
+                    $c = normalize_mongo($commentMatch);
+                    $a = $c['author'] ?? [];
+                    return [
+                        'id' => (string)($a['id'] ?? $userId),
+                        'name' => (string)($a['name'] ?? 'Reader'),
+                        'handle' => (string)($a['handle'] ?? $handle),
+                        'bio' => '',
+                        'avatar' => (string)($a['avatar'] ?? ''),
+                        'role' => 'author',
+                        'created_at' => null,
+                    ];
+                }
+            }
+
+            return null;
+        }
+
+        // Offline demo fallback from sample posts
+        foreach (sample_posts() as $sp) {
+            $a = $sp['author'] ?? [];
+            $idMatch = ($userId !== '' && (string)($a['id'] ?? '') === $userId);
+            $handleMatch = ($handle !== '' && strcasecmp((string)($a['handle'] ?? ''), $handle) === 0);
+            if ($idMatch || $handleMatch) {
+                return [
+                    'id' => (string)($a['id'] ?? ''),
+                    'name' => (string)($a['name'] ?? 'Author'),
+                    'handle' => (string)($a['handle'] ?? ''),
+                    'bio' => '',
+                    'avatar' => '',
+                    'role' => 'author',
+                    'created_at' => null,
+                ];
+            }
+        }
+
+        return null;
     }
 
     /**

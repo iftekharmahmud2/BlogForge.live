@@ -20,6 +20,19 @@ $postId = (string)($post['_id'] ?? $post['slug']);
 
 $comments = (new BlogForge\Repositories\CommentRepository())->forPost($postId);
 
+$authorMeta = is_array($post['author'] ?? null) ? $post['author'] : [];
+$authorProfile = BlogForge\Auth::findPublicUser(
+    (string)($authorMeta['id'] ?? ''),
+    (string)($authorMeta['handle'] ?? '')
+);
+$authorName = (string)($authorProfile['name'] ?? $authorMeta['name'] ?? 'Author');
+$authorHandle = ltrim((string)($authorProfile['handle'] ?? $authorMeta['handle'] ?? ''), '@');
+$authorAvatar = avatar_url((string)($authorProfile['avatar'] ?? $authorMeta['avatar'] ?? ''));
+$authorProfileUrl = profile_url([
+    'id' => (string)($authorProfile['id'] ?? $authorMeta['id'] ?? ''),
+    'handle' => $authorHandle,
+]);
+
 $currentUser = current_user();
 $isAuthor = $currentUser && ((string)($post['author']['id'] ?? '') === (string)$currentUser['id']);
 $canManage = $currentUser && ($isAuthor || is_admin());
@@ -61,15 +74,27 @@ require __DIR__ . '/partials/header.php';
 
     <!-- Author & Action Bar (Redesigned with SVG icons and clear labels) -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-5 border-y border-gray-200 mb-8">
-        <div class="flex items-center gap-3">
-            <span class="w-11 h-11 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
-                <?= e(initials($post['author']['name'] ?? 'Author')) ?>
-            </span>
+        <a href="<?= e($authorProfileUrl) ?>" class="flex items-center gap-3 group" title="View <?= e($authorName) ?>'s profile">
+            <?php if ($authorAvatar !== ''): ?>
+                <img data-avatar-img src="<?= e($authorAvatar) ?>" alt="<?= e($authorName) ?>" class="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0 shadow-sm group-hover:ring-2 group-hover:ring-orange-200 transition">
+                <span data-avatar-fallback class="hidden w-11 h-11 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                    <?= e(initials($authorName)) ?>
+                </span>
+            <?php else: ?>
+                <span class="w-11 h-11 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm group-hover:opacity-90 transition">
+                    <?= e(initials($authorName)) ?>
+                </span>
+            <?php endif; ?>
             <div>
-                <b class="block text-sm font-bold text-gray-900"><?= e($post['author']['name'] ?? 'Author') ?></b>
-                <span class="text-xs text-gray-500"><?= e(format_date($post['published_at'] ?? $post['created_at'] ?? time())) ?></span>
+                <div class="flex items-center gap-1.5">
+                    <b class="text-sm font-bold text-gray-900 group-hover:text-[#ff6b13] transition"><?= e($authorName) ?></b>
+                    <?php if ($authorHandle !== ''): ?>
+                        <span class="text-xs text-gray-400 group-hover:text-[#ff6b13] transition">@<?= e($authorHandle) ?></span>
+                    <?php endif; ?>
+                </div>
+                <span class="text-xs text-gray-500 block"><?= e(format_date($post['published_at'] ?? $post['created_at'] ?? time())) ?></span>
             </div>
-        </div>
+        </a>
 
         <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
             <?php if ($canManage): ?>
@@ -105,7 +130,7 @@ require __DIR__ . '/partials/header.php';
 
     <!-- Cover Image -->
     <div class="w-full aspect-[16/9] rounded-3xl overflow-hidden bg-gray-100 mb-10 shadow-sm border border-gray-100">
-        <img class="w-full h-full object-cover" src="<?= e(cover_url($post['cover'] ?? null, $post['category'] ?? null)) ?>" alt="<?= e($post['title']) ?>">
+        <img class="w-full h-full object-cover" src="<?= e(cover_url($post['cover'] ?? null, $post['category'] ?? null)) ?>" data-fallback-cover="<?= e(category_cover($post['category'] ?? null)) ?>" alt="<?= e($post['title']) ?>">
     </div>
 
     <!-- Story Content -->
@@ -127,11 +152,22 @@ require __DIR__ . '/partials/header.php';
     <!-- Bottom Navigation Callout -->
     <div class="mt-12 p-6 rounded-3xl bg-[#fbfaf8] border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-            <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                <?= e(initials($post['author']['name'] ?? 'Author')) ?>
-            </span>
+            <a href="<?= e($authorProfileUrl) ?>" class="shrink-0 group" title="View <?= e($authorName) ?>'s profile">
+                <?php if ($authorAvatar !== ''): ?>
+                    <img data-avatar-img src="<?= e($authorAvatar) ?>" alt="<?= e($authorName) ?>" class="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover:ring-2 group-hover:ring-orange-200 transition">
+                    <span data-avatar-fallback class="hidden w-10 h-10 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-xs">
+                        <?= e(initials($authorName)) ?>
+                    </span>
+                <?php else: ?>
+                    <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs group-hover:opacity-90 transition">
+                        <?= e(initials($authorName)) ?>
+                    </span>
+                <?php endif; ?>
+            </a>
             <div>
-                <b class="text-sm text-gray-900 block">Written by <?= e($post['author']['name'] ?? 'Author') ?></b>
+                <b class="text-sm text-gray-900 block">
+                    Written by <a href="<?= e($authorProfileUrl) ?>" class="hover:text-[#ff6b13] transition"><?= e($authorName) ?></a>
+                </b>
                 <span class="text-xs text-gray-500">Read more stories in <a href="<?= e(app_url('explore.php?category=' . urlencode($post['category'] ?? ''))) ?>" class="text-[#ff6b13] font-semibold hover:underline"><?= e($post['category'] ?? 'General') ?></a></span>
             </div>
         </div>
@@ -142,7 +178,7 @@ require __DIR__ . '/partials/header.php';
 
     <!-- Comments / Responses -->
     <section class="mt-14 pt-10 border-t border-gray-200">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Responses (<?= count($comments) ?>)</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Responses (<span data-comments-count><?= count($comments) ?></span>)</h2>
 
         <?php if (is_logged_in()): ?>
             <form class="space-y-3" data-comment-form data-post-id="<?= e($postId) ?>">
@@ -163,10 +199,38 @@ require __DIR__ . '/partials/header.php';
                 <p class="text-sm text-gray-500 py-6" data-no-comments>No responses yet. Be the first to share your perspective!</p>
             <?php else: ?>
                 <?php foreach ($comments as $c): ?>
-                    <div class="py-5 space-y-1.5">
-                        <b class="block text-sm font-semibold text-gray-900"><?= e((string)($c['author']['name'] ?? 'Reader')) ?></b>
-                        <p class="text-sm text-gray-700 leading-relaxed"><?= e((string)$c['body']) ?></p>
-                        <small class="text-xs text-gray-400 block"><?= e(format_date($c['created_at'] ?? time())) ?></small>
+                    <?php
+                    $cAuthor = is_array($c['author'] ?? null) ? $c['author'] : [];
+                    $cName = (string)($cAuthor['name'] ?? 'Reader');
+                    $cHandle = ltrim((string)($cAuthor['handle'] ?? ''), '@');
+                    $cAvatar = avatar_url((string)($cAuthor['avatar'] ?? ''));
+                    $cProfileUrl = profile_url($cAuthor);
+                    ?>
+                    <div class="py-5 flex items-start gap-3.5">
+                        <a href="<?= e($cProfileUrl) ?>" class="shrink-0 group" title="View <?= e($cName) ?>'s profile">
+                            <?php if ($cAvatar !== ''): ?>
+                                <img data-avatar-img src="<?= e($cAvatar) ?>" alt="<?= e($cName) ?>" class="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm group-hover:ring-2 group-hover:ring-orange-200 transition">
+                                <span data-avatar-fallback class="hidden w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-xs shadow-sm">
+                                    <?= e(initials($cName)) ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs shadow-sm group-hover:opacity-90 transition">
+                                    <?= e(initials($cName)) ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                        <div class="flex-1 min-w-0 space-y-1.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <a href="<?= e($cProfileUrl) ?>" class="inline-flex items-center gap-1.5 group">
+                                    <b class="text-sm font-semibold text-gray-900 group-hover:text-[#ff6b13] transition"><?= e($cName) ?></b>
+                                    <?php if ($cHandle !== ''): ?>
+                                        <span class="text-xs text-gray-400 group-hover:text-[#ff6b13] transition">@<?= e($cHandle) ?></span>
+                                    <?php endif; ?>
+                                </a>
+                                <small class="text-xs text-gray-400"><?= e(format_date($c['created_at'] ?? time())) ?></small>
+                            </div>
+                            <p class="text-sm text-gray-700 leading-relaxed"><?= e((string)$c['body']) ?></p>
+                        </div>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>

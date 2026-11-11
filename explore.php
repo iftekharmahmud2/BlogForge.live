@@ -50,14 +50,16 @@ require __DIR__ . '/partials/header.php';
                     </a>
                     <p class="text-gray-500 text-sm line-clamp-2 mb-4 leading-relaxed"><?= e($p['excerpt']) ?></p>
                     <div class="flex items-center gap-3 text-xs text-gray-400 font-medium">
-                        <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-[9px]"><?= e(initials($p['author']['name'] ?? 'Author')) ?></span>
-                        <span class="text-gray-700"><?= e($p['author']['name'] ?? 'Author') ?></span>
+                        <a href="<?= e(profile_url($p['author'] ?? [])) ?>" class="inline-flex items-center gap-2 text-gray-700 hover:text-[#ff6b13] transition group/author">
+                            <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-[9px]"><?= e(initials($p['author']['name'] ?? 'Author')) ?></span>
+                            <span class="group-hover/author:underline"><?= e($p['author']['name'] ?? 'Author') ?></span>
+                        </a>
                         <span>·</span>
                         <span><?= e((string)$p['read_time']) ?> min read</span>
                     </div>
                 </div>
                 <a href="<?= e(app_url('article.php?id=' . urlencode((string)($p['slug'] ?? $p['_id'])))) ?>" class="shrink-0 w-full sm:w-44 h-36 rounded-2xl overflow-hidden bg-gray-100 shadow-sm group-hover:shadow transition">
-                    <img src="<?= e(cover_url($p['cover'] ?? null, $p['category'] ?? null)) ?>" alt="<?= e($p['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    <img src="<?= e(cover_url($p['cover'] ?? null, $p['category'] ?? null)) ?>" data-fallback-cover="<?= e(category_cover($p['category'] ?? null)) ?>" alt="<?= e($p['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                 </a>
             </article>
         <?php endforeach; ?>

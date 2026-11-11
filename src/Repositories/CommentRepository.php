@@ -73,7 +73,129 @@ final class CommentRepository
             ['sort' => ['created_at' => -1], 'limit' => 100]
         );
 
-        return array_map('normalize_mongo', iterator_to_array($cursor, false));
+        $comments = array_map('normalize_mongo', iterator_to_array($cursor, false));
+        if (empty($comments)) {
+            return [];
+        }
+
+        // Batch-enrich commenter name, handle, and avatar from live users collection
+        $userOids = [];
+        foreach ($comments as $c) {
+            $uid = (string)($c['author']['id'] ?? '');
+            if ($uid !== '' && ($uOid = oid($uid))) {
+                $userOids[(string)$uOid] = $uOid;
+            }
+        }
+
+        if (!empty($userOids)) {
+            $uCursor = $db->users->find(
+                ['_id' => ['$in' => array_values($userOids)]],
+                ['projection' => ['name' => 1, 'handle' => 1, 'avatar' => 1]]
+            );
+            $usersById = [];
+            foreach ($uCursor as $uDoc) {
+                $u = normalize_mongo($uDoc);
+                $usersById[(string)$u['_id']] = $u;
+            }
+
+            foreach ($comments as &$c) {
+                $uid = (string)($c['author']['id'] ?? '');
+                if (isset($usersById[$uid])) {
+                    $liveUser = $usersById[$uid];
+                    $c['author']['name'] = (string)($liveUser['name'] ?? $c['author']['name'] ?? 'Reader');
+                    $c['author']['handle'] = (string)($liveUser['handle'] ?? $c['author']['handle'] ?? '');
+                    $c['author']['avatar'] = (string)($liveUser['avatar'] ?? $c['author']['avatar'] ?? '');
+                }
+            }
+            unset($c);
+        }
+
+        return $comments;
+    }
+
+    /**
+     * Get approved comments by a specific author across published stories only.
+     */
+    public function forAuthor(string $authorId, string $authorHandle = '', int $limit = 10): array
+    {
+        $db = Database::connection();
+        if (!$db) {
+            return [];
+        }
+
+        $authorId = trim($authorId);
+        $authorHandle = ltrim(trim($authorHandle), '@');
+        if ($authorId === '' && $authorHandle === '') {
+            return [];
+        }
+
+        $filter = ['status' => 'approved'];
+        if (oid($authorId)) {
+            $filter['author.id'] = $authorId;
+        } else {
+            $or = [];
+            if ($authorId !== '') {
+                $or[] = ['author.id' => $authorId];
+            }
+            if ($authorHandle !== '' && preg_match('/^[a-zA-Z0-9_.\-]{1,50}$/', $authorHandle)) {
+                $or[] = ['author.handle' => new \MongoDB\BSON\Regex('^' . preg_quote($authorHandle, '/') . '$', 'i')];
+            }
+            if (empty($or)) {
+                return [];
+            }
+            if (count($or) === 1) {
+                $filter += $or[0];
+            } else {
+                $filter['$or'] = $or;
+            }
+        }
+
+        $limit = max(1, min(50, $limit));
+        $cursor = $db->comments->find(
+            $filter,
+            ['sort' => ['created_at' => -1], 'limit' => $limit * 2]
+        );
+        $rawComments = array_map('normalize_mongo', iterator_to_array($cursor, false));
+        if (empty($rawComments)) {
+            return [];
+        }
+
+        $postOids = [];
+        foreach ($rawComments as $c) {
+            $oid = oid((string)($c['post_id'] ?? ''));
+            if ($oid) {
+                $postOids[(string)$oid] = $oid;
+            }
+        }
+        if (empty($postOids)) {
+            return [];
+        }
+
+        $postsCursor = $db->posts->find(
+            ['_id' => ['$in' => array_values($postOids)], 'status' => 'published'],
+            ['projection' => ['title' => 1, 'slug' => 1]]
+        );
+        $publishedPosts = [];
+        foreach ($postsCursor as $pDoc) {
+            $p = normalize_mongo($pDoc);
+            $publishedPosts[(string)$p['_id']] = $p;
+        }
+
+        $visible = [];
+        foreach ($rawComments as $c) {
+            $pid = (string)($c['post_id'] ?? '');
+            if (!isset($publishedPosts[$pid])) {
+                continue;
+            }
+            $c['post_title'] = (string)($publishedPosts[$pid]['title'] ?? 'Story');
+            $c['post_slug'] = (string)($publishedPosts[$pid]['slug'] ?? $pid);
+            $visible[] = $c;
+            if (count($visible) >= $limit) {
+                break;
+            }
+        }
+
+        return $visible;
     }
 
     /**

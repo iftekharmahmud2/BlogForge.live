@@ -81,6 +81,8 @@ if ($method === 'POST') {
                     'id' => (string)$user['id'],
                     'name' => (string)$user['name'],
                     'handle' => (string)($user['handle'] ?? ''),
+                    'avatar' => avatar_url((string)($user['avatar'] ?? '')),
+                    'profile_url' => profile_url($user),
                 ],
                 'created_at' => time(),
             ],

@@ -101,6 +101,11 @@ function cover_url(?string $cover, ?string $category = null): string
         if (!filter_var($cover, FILTER_VALIDATE_URL)) {
             return category_cover($category);
         }
+        // Ephemeral Facebook/Instagram CDN URLs expire quickly and break; use category cover instead
+        $host = (string)parse_url($cover, PHP_URL_HOST);
+        if (preg_match('~(^|\.)(fbcdn\.net|fbsbx\.com)$~i', $host)) {
+            return category_cover($category);
+        }
         // Auto-optimize Unsplash images with responsive parameters if missing
         if (str_contains($cover, 'images.unsplash.com') && !str_contains($cover, 'auto=format')) {
             $separator = str_contains($cover, '?') ? '&' : '?';
@@ -143,6 +148,42 @@ function cover_url(?string $cover, ?string $category = null): string
     }
 
     return '/' . $clean;
+}
+
+/**
+ * Build a public profile URL for a post or comment author.
+ */
+function profile_url(array $author): string
+{
+    $handle = ltrim(trim((string)($author['handle'] ?? '')), '@');
+    $id = trim((string)($author['id'] ?? $author['_id'] ?? ''));
+
+    if ($handle !== '') {
+        return app_url('profile.php?handle=' . urlencode($handle));
+    }
+    if ($id !== '') {
+        return app_url('profile.php?id=' . urlencode($id));
+    }
+
+    return app_url('profile.php');
+}
+
+/**
+ * Resolve a safe HTTP/HTTPS avatar URL, rejecting expired social CDN URLs or invalid links.
+ */
+function avatar_url(?string $avatar): string
+{
+    $avatar = trim((string)$avatar);
+    if ($avatar === '' || !preg_match('~^https?://~i', $avatar) || !filter_var($avatar, FILTER_VALIDATE_URL)) {
+        return '';
+    }
+
+    $host = (string)parse_url($avatar, PHP_URL_HOST);
+    if (preg_match('~(^|\.)(fbcdn\.net|fbsbx\.com)$~i', $host)) {
+        return '';
+    }
+
+    return $avatar;
 }
 
 /**

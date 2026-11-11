@@ -70,6 +70,38 @@
         const isLoggedIn = Boolean(window.BLOGFORGE?.loggedIn);
 
         // ----------------------------------------------------
+        // 0. Graceful Image Fallbacks (Cover & Avatar safety net)
+        // ----------------------------------------------------
+        const applyImgFallback = (img) => {
+            if (!(img instanceof HTMLImageElement)) return;
+            if (img.dataset.fallbackCover && !img.dataset.fallbackApplied) {
+                img.dataset.fallbackApplied = '1';
+                img.src = img.dataset.fallbackCover;
+                return;
+            }
+            if (img.hasAttribute('data-avatar-img')) {
+                img.classList.add('hidden');
+                const fallbackEl = img.nextElementSibling;
+                if (fallbackEl && fallbackEl.hasAttribute('data-avatar-fallback')) {
+                    fallbackEl.classList.remove('hidden');
+                    fallbackEl.classList.add('flex');
+                }
+            }
+        };
+
+        document.addEventListener('error', (e) => {
+            if (e.target instanceof HTMLImageElement) {
+                applyImgFallback(e.target);
+            }
+        }, true);
+
+        $$('img[data-fallback-cover], img[data-avatar-img]').forEach((img) => {
+            if (img.complete && img.naturalWidth === 0) {
+                applyImgFallback(img);
+            }
+        });
+
+        // ----------------------------------------------------
         // 1. Navigation & Dropdowns
         // ----------------------------------------------------
         const accountMenuToggle = document.querySelector('[data-menu-toggle]');
@@ -249,14 +281,44 @@
 
                     // Dynamic DOM update
                     if (commentsContainer && res.comment) {
+                        const author = res.comment.author || {};
+                        const authorName = String(author.name || 'Reader');
+                        const authorHandle = String(author.handle || '').replace(/^@+/, '');
+                        const profileHref = (author.profile_url && typeof author.profile_url === 'string')
+                            ? author.profile_url
+                            : (authorHandle
+                                ? `${baseUrl}/profile.php?handle=${encodeURIComponent(authorHandle)}`
+                                : `${baseUrl}/profile.php?id=${encodeURIComponent(String(author.id || ''))}`);
+                        const safeAvatar = (author.avatar && /^https?:\/\//i.test(String(author.avatar))) ? String(author.avatar) : '';
+                        const nameParts = authorName.trim().split(/\s+/).filter(Boolean);
+                        const authorInitials = ((nameParts[0]?.[0] || '') + (nameParts[1]?.[0] || nameParts[0]?.[1] || '')).toUpperCase() || 'A';
+
+                        const avatarHtml = safeAvatar
+                            ? `<img data-avatar-img src="${escapeHtml(safeAvatar)}" alt="${escapeHtml(authorName)}" class="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm"><span data-avatar-fallback class="hidden w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-xs shadow-sm">${escapeHtml(authorInitials)}</span>`
+                            : `<span class="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs shadow-sm">${escapeHtml(authorInitials)}</span>`;
+
                         const newComment = document.createElement('div');
-                        newComment.className = 'py-5 space-y-1.5 border-b border-gray-100';
+                        newComment.className = 'py-5 flex items-start gap-3.5 border-b border-gray-100';
                         newComment.innerHTML = `
-                            <b class="block text-sm font-semibold text-gray-900">${escapeHtml(res.comment.author.name)}</b>
-                            <p class="text-sm text-gray-700 leading-relaxed">${escapeHtml(res.comment.body)}</p>
-                            <small class="text-xs text-gray-400 block">Just now</small>
+                            <a href="${escapeHtml(profileHref)}" class="shrink-0 group" title="View ${escapeHtml(authorName)}'s profile">${avatarHtml}</a>
+                            <div class="flex-1 min-w-0 space-y-1.5">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <a href="${escapeHtml(profileHref)}" class="inline-flex items-center gap-1.5 group">
+                                        <b class="text-sm font-semibold text-gray-900 group-hover:text-[#ff6b13] transition">${escapeHtml(authorName)}</b>
+                                        ${authorHandle ? `<span class="text-xs text-gray-400 group-hover:text-[#ff6b13] transition">@${escapeHtml(authorHandle)}</span>` : ''}
+                                    </a>
+                                    <small class="text-xs text-gray-400">Just now</small>
+                                </div>
+                                <p class="text-sm text-gray-700 leading-relaxed">${escapeHtml(res.comment.body)}</p>
+                            </div>
                         `;
                         commentsContainer.prepend(newComment);
+
+                        const countEl = $('[data-comments-count]');
+                        if (countEl) {
+                            const nextCount = parseInt(countEl.textContent || '0', 10) + 1;
+                            if (!Number.isNaN(nextCount)) countEl.textContent = String(nextCount);
+                        }
 
                         const emptyNotice = $('[data-no-comments]');
                         if (emptyNotice) emptyNotice.remove();
