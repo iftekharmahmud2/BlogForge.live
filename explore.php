@@ -51,7 +51,7 @@ require __DIR__ . '/partials/header.php';
                     <p class="text-gray-500 text-sm line-clamp-2 mb-4 leading-relaxed"><?= e($p['excerpt']) ?></p>
                     <div class="flex items-center gap-3 text-xs text-gray-400 font-medium">
                         <a href="<?= e(profile_url($p['author'] ?? [])) ?>" class="inline-flex items-center gap-2 text-gray-700 hover:text-[#ff6b13] transition group/author">
-                            <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-[9px]"><?= e(initials($p['author']['name'] ?? 'Author')) ?></span>
+                            <?= avatar_badge((string)($p['author']['avatar'] ?? ''), (string)($p['author']['name'] ?? 'Author'), 'w-6 h-6 text-[9px]') ?>
                             <span class="group-hover/author:underline"><?= e($p['author']['name'] ?? 'Author') ?></span>
                         </a>
                         <span>·</span>

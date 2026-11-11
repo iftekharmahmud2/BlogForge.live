@@ -81,14 +81,18 @@ $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php');
                 </a>
 
                 <!-- Profile Avatar Button & Dropdown -->
+                <?php $headerAvatar = avatar_url((string)($user['avatar'] ?? '')); ?>
                 <div class="relative">
-                    <button class="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white font-bold text-xs flex items-center justify-center cursor-pointer shadow-sm hover:opacity-90 focus:outline-none" data-menu-toggle aria-label="Account Menu" type="button">
-                        <?= e(initials($user['name'])) ?>
+                    <button class="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white font-bold text-xs flex items-center justify-center cursor-pointer shadow-sm hover:opacity-90 focus:outline-none overflow-hidden <?= $headerAvatar !== '' ? 'ring-2 ring-orange-100' : '' ?>" data-menu-toggle aria-label="Account Menu" type="button">
+                        <?= avatar_inner($headerAvatar, (string)($user['name'] ?? 'Author'), false) ?>
                     </button>
                     <div class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-100 text-gray-700 rounded-2xl shadow-xl p-2 z-50 text-sm" data-account-menu>
-                        <div class="px-3 py-2 border-b border-gray-100 mb-1">
-                            <b class="block text-gray-900 truncate font-semibold"><?= e($user['name']) ?></b>
-                            <small class="text-xs text-gray-500">@<?= e($user['handle'] ?? 'author') ?></small>
+                        <div class="px-3 py-2 border-b border-gray-100 mb-1 flex items-center gap-2.5">
+                            <?= avatar_badge($headerAvatar, (string)($user['name'] ?? 'Author'), 'w-9 h-9 text-xs', '', false) ?>
+                            <div class="min-w-0">
+                                <b class="block text-gray-900 truncate font-semibold"><?= e($user['name']) ?></b>
+                                <small class="block text-xs text-gray-500 truncate">@<?= e($user['handle'] ?? 'author') ?></small>
+                            </div>
                         </div>
                         <a href="<?= e(app_url('profile.php')) ?>" class="block px-3 py-2 rounded-xl text-gray-700 hover:bg-orange-50 hover:text-[#ff6b13] transition font-medium">Profile &amp; stories</a>
                         <a href="<?= e(app_url('drafts.php')) ?>" class="block px-3 py-2 rounded-xl text-gray-700 hover:bg-orange-50 hover:text-[#ff6b13] transition font-medium">My Drafts</a>

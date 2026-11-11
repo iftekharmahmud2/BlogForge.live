@@ -27,12 +27,8 @@ require __DIR__ . '/partials/header.php';
         <!-- Profile details -->
         <form class="bg-white border border-[#e9e5df] rounded-3xl p-6 sm:p-8 shadow-sm mb-8 space-y-5" data-profile-form novalidate>
             <div class="flex items-center gap-4 pb-4 border-b border-gray-100">
-                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-base shrink-0 overflow-hidden shadow-sm" data-avatar-preview>
-                    <?php if (!empty($u['avatar'])): ?>
-                        <img src="<?= e((string)$u['avatar']) ?>" alt="" class="w-full h-full object-cover">
-                    <?php else: ?>
-                        <?= e(initials($displayName)) ?>
-                    <?php endif; ?>
+                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-base shrink-0 overflow-hidden shadow-sm" data-avatar-preview data-initials="<?= e(initials($displayName)) ?>">
+                    <?= avatar_inner((string)($u['avatar'] ?? ''), $displayName, false) ?>
                 </div>
                 <div>
                     <h2 class="text-lg font-bold text-gray-900">Your details</h2>

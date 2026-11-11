@@ -817,21 +817,24 @@
 
             const avatarInput = profileForm.elements.avatar;
             const avatarPreview = $('[data-avatar-preview]');
-            const initialsText = avatarPreview ? avatarPreview.textContent.trim() : '';
+            const initialsText = avatarPreview ? (avatarPreview.dataset.initials || avatarPreview.textContent.trim()) : '';
             if (avatarInput && avatarPreview) {
-                avatarInput.addEventListener('change', () => {
+                const syncAvatarPreview = () => {
                     const url = avatarInput.value.trim();
                     avatarPreview.textContent = '';
                     if (/^https?:\/\//i.test(url)) {
                         const img = document.createElement('img');
                         img.alt = '';
+                        img.className = 'w-full h-full object-cover';
                         img.src = url;
                         img.onerror = () => { avatarPreview.textContent = initialsText; };
                         avatarPreview.appendChild(img);
                     } else {
                         avatarPreview.textContent = initialsText;
                     }
-                });
+                };
+                avatarInput.addEventListener('change', syncAvatarPreview);
+                avatarInput.addEventListener('input', syncAvatarPreview);
             }
 
             profileForm.addEventListener('submit', async (e) => {

@@ -5,6 +5,7 @@ module.exports = {
     "./*.php",
     "./partials/**/*.php",
     "./admin/**/*.php",
+    "./src/**/*.php",
     "./assets/js/**/*.js"
   ],
   theme: {

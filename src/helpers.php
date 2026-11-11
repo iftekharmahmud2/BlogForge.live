@@ -187,6 +187,35 @@ function avatar_url(?string $avatar): string
 }
 
 /**
+ * Render inner avatar image with an adjacent initials fallback element for app.js error handling.
+ */
+function avatar_inner(?string $avatar, string $name, bool $lazy = true): string
+{
+    $label = trim($name) !== '' ? $name : 'Author';
+    $init = e(initials($label));
+    $safeAvatar = avatar_url($avatar);
+
+    if ($safeAvatar !== '') {
+        $loadingAttr = $lazy ? ' loading="lazy"' : '';
+        return '<img data-avatar-img src="' . e($safeAvatar) . '" alt="' . e($label) . '" class="w-full h-full object-cover"' . $loadingAttr . '>'
+            . '<span data-avatar-fallback class="hidden w-full h-full items-center justify-center">' . $init . '</span>';
+    }
+
+    return $init;
+}
+
+/**
+ * Render a circular author/commenter avatar badge with initials fallback.
+ */
+function avatar_badge(?string $avatar, string $name, string $sizeClasses = 'w-8 h-8 text-xs', string $extraClasses = '', bool $lazy = true): string
+{
+    $base = 'rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff7b22] text-white inline-flex items-center justify-center font-bold shrink-0 overflow-hidden';
+    $classes = trim($base . ' ' . $sizeClasses . ' ' . $extraClasses);
+
+    return '<span class="' . e($classes) . '">' . avatar_inner($avatar, $name, $lazy) . '</span>';
+}
+
+/**
  * Upload an image (data URI, remote URL, or binary) to Cloudinary if configured.
  * Supports CLOUDINARY_URL (cloudinary://api_key:api_secret@cloud_name) or discrete keys.
  */
@@ -490,7 +519,36 @@ function safe_next_url(?string $next, string $default = ''): string
  */
 function current_user(): ?array
 {
-    return $_SESSION['user'] ?? null;
+    $user = $_SESSION['user'] ?? null;
+    if (!is_array($user) || empty($user['id'])) {
+        return $user;
+    }
+
+    // Keep session user (including avatar) hydrated for existing sessions or after updates
+    $lastSync = (int)($_SESSION['_user_synced_at'] ?? 0);
+    if ((!array_key_exists('avatar', $user) || (time() - $lastSync) > 60)
+        && PHP_SAPI !== 'cli'
+        && class_exists(\BlogForge\Auth::class)) {
+        static $syncedThisRequest = false;
+        if (!$syncedThisRequest) {
+            $syncedThisRequest = true;
+            $_SESSION['_user_synced_at'] = time();
+            try {
+                $fresh = \BlogForge\Auth::fetchUser((string)$user['id']);
+                if ($fresh) {
+                    $user['name'] = (string)($fresh['name'] ?? $user['name'] ?? 'Author');
+                    $user['handle'] = (string)($fresh['handle'] ?? $user['handle'] ?? '');
+                    $user['avatar'] = (string)($fresh['avatar'] ?? '');
+                    $user['role'] = (string)($fresh['role'] ?? $user['role'] ?? 'author');
+                    $_SESSION['user'] = $user;
+                }
+            } catch (\Throwable $e) {
+                // Keep existing session user if database is unreachable
+            }
+        }
+    }
+
+    return $user;
 }
 
 function is_logged_in(): bool
@@ -864,6 +922,60 @@ function sample_posts(): array
 }
 
 /**
+ * Enrich post author blocks with live name, handle, and avatar from the users collection.
+ */
+function enrich_post_authors(array $posts, ?\MongoDB\Database $database = null): array
+{
+    if (empty($posts)) {
+        return $posts;
+    }
+
+    $database = $database ?: db();
+    if (!$database) {
+        return $posts;
+    }
+
+    $userOids = [];
+    foreach ($posts as $post) {
+        $uid = (string)($post['author']['id'] ?? '');
+        if ($uid !== '' && ($uOid = oid($uid))) {
+            $userOids[(string)$uOid] = $uOid;
+        }
+    }
+
+    if (empty($userOids)) {
+        return $posts;
+    }
+
+    try {
+        $uCursor = $database->users->find(
+            ['_id' => ['$in' => array_values($userOids)]],
+            ['projection' => ['name' => 1, 'handle' => 1, 'avatar' => 1]]
+        );
+        $usersById = [];
+        foreach ($uCursor as $uDoc) {
+            $u = normalize_mongo($uDoc);
+            $usersById[(string)$u['_id']] = $u;
+        }
+
+        foreach ($posts as &$post) {
+            $uid = (string)($post['author']['id'] ?? '');
+            if ($uid !== '' && isset($usersById[$uid])) {
+                $liveUser = $usersById[$uid];
+                $post['author']['name'] = (string)($liveUser['name'] ?? $post['author']['name'] ?? 'Author');
+                $post['author']['handle'] = (string)($liveUser['handle'] ?? $post['author']['handle'] ?? '');
+                $post['author']['avatar'] = (string)($liveUser['avatar'] ?? $post['author']['avatar'] ?? '');
+            }
+        }
+        unset($post);
+    } catch (\Throwable $e) {
+        error_log('[BlogForge] enrich_post_authors error: ' . $e->getMessage());
+    }
+
+    return $posts;
+}
+
+/**
  * Fetch public published posts with optional category filter, search keyword, and limit.
  */
 function public_posts(int $limit = 20, ?string $category = null, ?string $search = null): array
@@ -893,7 +1005,8 @@ function public_posts(int $limit = 20, ?string $category = null, ?string $search
             'sort' => ['published_at' => -1],
             'limit' => $limit,
         ]);
-        return array_map('normalize_mongo', iterator_to_array($cursor, false));
+        $posts = array_map('normalize_mongo', iterator_to_array($cursor, false));
+        return enrich_post_authors($posts, $database);
     } catch (\Throwable $e) {
         error_log('[BlogForge] public_posts query error: ' . $e->getMessage());
         return [];
@@ -940,7 +1053,8 @@ function find_post(string $key, bool $allowDrafts = false): ?array
             }
         }
 
-        return $normalized;
+        $enriched = enrich_post_authors([$normalized], $database);
+        return $enriched[0] ?? $normalized;
     } catch (\Throwable $e) {
         error_log('[BlogForge] find_post error: ' . $e->getMessage());
         return null;

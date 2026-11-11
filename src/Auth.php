@@ -181,7 +181,7 @@ final class Auth
         }
 
         $avatar = trim((string)($input['avatar'] ?? ''));
-        if ($avatar !== '' && (!preg_match('~^https?://~i', $avatar) || !filter_var($avatar, FILTER_VALIDATE_URL) || mb_strlen($avatar) > 500)) {
+        if ($avatar !== '' && (!preg_match('~^https?://~i', $avatar) || !filter_var($avatar, FILTER_VALIDATE_URL) || mb_strlen($avatar) > 1000)) {
             throw new \RuntimeException('Profile photo must be a valid http(s) image URL.');
         }
 
@@ -205,6 +205,7 @@ final class Auth
         $fresh = $db->users->findOne(['_id' => $oid]);
         $session = self::sessionUser($fresh);
         $_SESSION['user'] = $session;
+        $_SESSION['_user_synced_at'] = time();
 
         return $session;
     }
@@ -428,6 +429,7 @@ final class Auth
 
         $session = self::sessionUser($user);
         $_SESSION['user'] = $session;
+        $_SESSION['_user_synced_at'] = time();
         $_SESSION['api_token'] = bin2hex(random_bytes(32));
         $session['token'] = $_SESSION['api_token'];
 

@@ -203,9 +203,7 @@ require __DIR__ . '/partials/header.php';
                         </div>
                         <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
                             <a href="<?= e(profile_url($leadStory['author'] ?? [])) ?>" class="flex items-center gap-2.5 group/author">
-                                <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs">
-                                    <?= e(initials($leadStory['author']['name'] ?? 'Author')) ?>
-                                </span>
+                                <?= avatar_badge((string)($leadStory['author']['avatar'] ?? ''), (string)($leadStory['author']['name'] ?? 'Author'), 'w-8 h-8 text-xs') ?>
                                 <span class="text-xs font-bold text-[#11151b] group-hover/author:text-[#ff6b13] transition"><?= e($leadStory['author']['name'] ?? 'Author') ?></span>
                             </a>
                             <span class="text-xs text-gray-400"><?= e(format_date($leadStory['published_at'] ?? time())) ?></span>
@@ -235,8 +233,11 @@ require __DIR__ . '/partials/header.php';
                                     <?= e($story['excerpt'] ?? '') ?>
                                 </p>
                             </div>
-                            <div class="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
-                                <a href="<?= e(profile_url($story['author'] ?? [])) ?>" class="font-semibold text-[#11151b] hover:text-[#ff6b13] transition truncate"><?= e($story['author']['name'] ?? 'Author') ?></a>
+                            <div class="flex items-center justify-between gap-3 text-xs text-gray-500 pt-3 border-t border-gray-100">
+                                <a href="<?= e(profile_url($story['author'] ?? [])) ?>" class="inline-flex items-center gap-2 font-semibold text-[#11151b] hover:text-[#ff6b13] transition min-w-0">
+                                    <?= avatar_badge((string)($story['author']['avatar'] ?? ''), (string)($story['author']['name'] ?? 'Author'), 'w-6 h-6 text-[9px]') ?>
+                                    <span class="truncate"><?= e($story['author']['name'] ?? 'Author') ?></span>
+                                </a>
                                 <span class="text-gray-400 shrink-0"><?= e(format_date($story['published_at'] ?? time())) ?></span>
                             </div>
                         </div>
@@ -365,9 +366,7 @@ require __DIR__ . '/partials/header.php';
 
                     <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
                         <a href="<?= e(profile_url($story['author'] ?? [])) ?>" class="flex items-center gap-2.5 group/author">
-                            <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff7b22] text-white flex items-center justify-center font-bold text-[10px]">
-                                <?= e(initials($story['author']['name'] ?? 'Author')) ?>
-                            </span>
+                            <?= avatar_badge((string)($story['author']['avatar'] ?? ''), (string)($story['author']['name'] ?? 'Author'), 'w-7 h-7 text-[10px]') ?>
                             <span class="text-xs font-semibold text-gray-800 group-hover/author:text-[#ff6b13] transition"><?= e($story['author']['name'] ?? 'Author') ?></span>
                         </a>
                         <a href="<?= e(app_url('article.php?id=' . urlencode((string)($story['slug'] ?? $story['_id'])))) ?>" class="text-xs font-bold text-[#ff6b13] hover:underline">
