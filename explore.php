@@ -11,7 +11,7 @@ $cat = isset($_GET['category']) && is_string($_GET['category']) ? trim($_GET['ca
 // Execute optimized database query with server-side filters
 $posts = public_posts(50, $cat !== '' ? $cat : null, $q !== '' ? $q : null);
 
-$topics = ['Technology', 'Lifestyle', 'Business', 'Education', 'Health', 'Travel', 'Culture', 'Self Improvement'];
+$topics = (new BlogForge\Repositories\CategoryRepository())->names($cat);
 
 require __DIR__ . '/partials/header.php';
 ?>

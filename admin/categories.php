@@ -79,7 +79,7 @@ require dirname(__DIR__) . '/partials/header.php';
                                 <td class="py-3.5 px-4 font-semibold text-gray-900"><?= e((string)$c['name']) ?></td>
                                 <td class="py-3.5 px-4 font-mono text-xs text-gray-500"><?= e((string)$c['slug']) ?></td>
                                 <td class="py-3.5 px-4 text-right">
-                                    <form method="post" class="inline" onsubmit="return confirm('Remove category <?= e((string)$c['name']) ?>?');">
+                                    <form method="post" class="inline" data-confirm="<?= e('Remove category ' . (string)$c['name'] . '?') ?>">
                                         <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="slug" value="<?= e((string)$c['slug']) ?>">

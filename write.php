@@ -36,7 +36,8 @@ if ($editId !== '') {
     $pageTitle = 'Write a new story — BlogForge';
 }
 
-$categories = ['Technology', 'Lifestyle', 'Business', 'Education', 'Health', 'Travel', 'Culture', 'Self Improvement'];
+$savedCategory = $isEdit ? trim((string)($post['category'] ?? '')) : '';
+$categories = (new BlogForge\Repositories\CategoryRepository())->names($savedCategory);
 $currentCover = (string)($post['cover'] ?? '');
 if (
     preg_match('~^/?assets/img/covers/[^/]+\.(svg|webp)$~i', $currentCover) ||
@@ -141,7 +142,7 @@ require __DIR__ . '/partials/header.php';
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Category</label>
                         <select class="w-full bg-[#fbfaf8] border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition" name="category">
                             <?php foreach ($categories as $cat): ?>
-                                <option value="<?= e($cat) ?>" <?= (($post['category'] ?? '') === $cat) ? 'selected' : '' ?>><?= e($cat) ?></option>
+                                <option value="<?= e($cat) ?>" <?= strcasecmp($savedCategory, $cat) === 0 ? 'selected' : '' ?>><?= e($cat) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

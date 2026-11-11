@@ -17,8 +17,7 @@ if (!$db) {
 }
 
 echo "[*] Seeding default categories...\n";
-$cats = ['Technology', 'Lifestyle', 'Business', 'Education', 'Health', 'Travel', 'Culture', 'Self Improvement'];
-foreach ($cats as $name) {
+foreach (BlogForge\Repositories\CategoryRepository::DEFAULT_NAMES as $name) {
     $db->categories->updateOne(
         ['slug' => slugify($name)],
         ['$set' => ['name' => $name, 'slug' => slugify($name), 'updated_at' => new UTCDateTime()]],

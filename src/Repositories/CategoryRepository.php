@@ -8,6 +8,31 @@ use MongoDB\BSON\UTCDateTime;
 
 final class CategoryRepository
 {
+    public const DEFAULT_NAMES = [
+        'Technology',
+        'Lifestyle',
+        'Business',
+        'Education',
+        'Health',
+        'Travel',
+        'Culture',
+        'Self Improvement',
+    ];
+
+    /**
+     * Build fallback category rows from the built-in defaults.
+     */
+    public static function defaultRows(): array
+    {
+        return array_map(
+            static fn (string $name): array => [
+                'name' => $name,
+                'slug' => slugify($name),
+            ],
+            self::DEFAULT_NAMES
+        );
+    }
+
     /**
      * Retrieve all categories sorted by name.
      */
@@ -15,20 +40,49 @@ final class CategoryRepository
     {
         $db = Database::connection();
         if (!$db) {
-            return [
-                ['name' => 'Technology', 'slug' => 'technology'],
-                ['name' => 'Lifestyle', 'slug' => 'lifestyle'],
-                ['name' => 'Business', 'slug' => 'business'],
-                ['name' => 'Education', 'slug' => 'education'],
-                ['name' => 'Health', 'slug' => 'health'],
-                ['name' => 'Travel', 'slug' => 'travel'],
-                ['name' => 'Culture', 'slug' => 'culture'],
-                ['name' => 'Self Improvement', 'slug' => 'self-improvement'],
-            ];
+            return self::defaultRows();
         }
 
-        $cursor = $db->categories->find([], ['sort' => ['name' => 1]]);
-        return array_map('normalize_mongo', iterator_to_array($cursor, false));
+        try {
+            $cursor = $db->categories->find([], ['sort' => ['name' => 1]]);
+            return array_map('normalize_mongo', iterator_to_array($cursor, false));
+        } catch (\Throwable $e) {
+            error_log('[BlogForge] CategoryRepository::all error: ' . $e->getMessage());
+            return self::defaultRows();
+        }
+    }
+
+    /**
+     * Retrieve category display names for writer and discovery dropdowns, falling back to defaults if none exist.
+     * Optionally ensures an extra active/saved category name is present without duplicates.
+     */
+    public function names(?string $includeName = null): array
+    {
+        $names = [];
+        $seen = [];
+
+        foreach ($this->all() as $cat) {
+            $name = trim((string)($cat['name'] ?? ''));
+            $key = strtolower($name);
+            if ($name !== '' && !isset($seen[$key])) {
+                $seen[$key] = true;
+                $names[] = $name;
+            }
+        }
+
+        if (empty($names)) {
+            $names = self::DEFAULT_NAMES;
+            foreach ($names as $name) {
+                $seen[strtolower($name)] = true;
+            }
+        }
+
+        $extra = trim((string)$includeName);
+        if ($extra !== '' && !isset($seen[strtolower($extra)])) {
+            $names[] = $extra;
+        }
+
+        return $names;
     }
 
     /**
@@ -41,7 +95,7 @@ final class CategoryRepository
             throw new \RuntimeException('Database is currently offline. Cannot create category.');
         }
 
-        $name = trim($name);
+        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? $name);
         if (mb_strlen($name) < 2 || mb_strlen($name) > 50) {
             throw new \RuntimeException('Category name must be between 2 and 50 characters.');
         }
