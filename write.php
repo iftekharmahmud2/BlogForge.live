@@ -38,7 +38,7 @@ if ($editId !== '') {
 
 $categories = ['Technology', 'Lifestyle', 'Business', 'Education', 'Health', 'Travel', 'Culture', 'Self Improvement'];
 $currentCover = (string)($post['cover'] ?? '');
-if (preg_match('~^/?assets/img/covers/[^/]+\.svg$~i', $currentCover)) {
+if (preg_match('~^/?assets/img/covers/[^/]+\.(svg|webp)$~i', $currentCover)) {
     $currentCover = '';
 }
 $currentBody = (string)($post['body'] ?? '');

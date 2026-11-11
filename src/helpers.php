@@ -40,23 +40,44 @@ function app_url(string $path = ''): string
 }
 
 /**
- * Map a post category to its default editorial WebP cover image.
+ * Map a post category to its default editorial cover image in assets/img/covers/.
  */
 function category_cover(?string $category): string
 {
     static $map = [
-        'business'         => '/assets/img/covers/business.webp',
-        'culture'          => '/assets/img/covers/culture.webp',
-        'education'        => '/assets/img/covers/education.webp',
-        'health'           => '/assets/img/covers/health.webp',
-        'lifestyle'        => '/assets/img/covers/lifestyle.webp',
-        'self-improvement' => '/assets/img/covers/self-improvement.webp',
-        'technology'       => '/assets/img/covers/technology.webp',
-        'travel'           => '/assets/img/covers/travel.webp',
+        'business'         => '/assets/img/covers/Business.png',
+        'culture'          => '/assets/img/covers/Culture.png',
+        'education'        => '/assets/img/covers/Education.png',
+        'health'           => '/assets/img/covers/Health.png',
+        'lifestyle'        => '/assets/img/covers/Lifestyle.png',
+        'self-improvement' => '/assets/img/covers/Self-improvement.png',
+        'technology'       => '/assets/img/covers/Technology.png',
+        'travel'           => '/assets/img/covers/Travel.png',
     ];
 
     $key = trim((string)preg_replace('/[^a-z0-9]+/', '-', strtolower(trim((string)$category))), '-');
-    return $map[$key] ?? '/assets/img/covers/technology.webp';
+    if (isset($map[$key])) {
+        return $map[$key];
+    }
+
+    if ($key !== '') {
+        $coversDir = dirname(__DIR__) . '/assets/img/covers';
+        $entries = @scandir($coversDir);
+        if (is_array($entries)) {
+            foreach ($entries as $entry) {
+                if ($entry === '.' || $entry === '..' || !is_file($coversDir . '/' . $entry)) {
+                    continue;
+                }
+                $stem = pathinfo($entry, PATHINFO_FILENAME);
+                $entryKey = trim((string)preg_replace('/[^a-z0-9]+/', '-', strtolower($stem)), '-');
+                if ($entryKey === $key) {
+                    return '/assets/img/covers/' . $entry;
+                }
+            }
+        }
+    }
+
+    return '/assets/img/covers/Technology.png';
 }
 
 /**
@@ -94,12 +115,31 @@ function cover_url(?string $cover, ?string $category = null): string
         return category_cover($category);
     }
 
-    // Upgrade legacy/removed default cover paths to the active category WebP asset
-    if (str_starts_with($clean, 'assets/img/covers/')) {
-        $diskPath = dirname(__DIR__) . '/' . $clean;
-        if (str_ends_with(strtolower($clean), '.svg') || !is_file($diskPath)) {
-            return category_cover($category);
+    // Resolve local cover assets with exact disk filename casing (safe for Linux/Vercel)
+    // and automatically upgrade removed legacy .svg / .webp paths to the category cover.
+    if (str_starts_with(strtolower($clean), 'assets/img/covers/')) {
+        static $coverFiles = null;
+        if ($coverFiles === null) {
+            $coverFiles = [];
+            $coversDir = dirname(__DIR__) . '/assets/img/covers';
+            $entries = @scandir($coversDir);
+            if (is_array($entries)) {
+                foreach ($entries as $entry) {
+                    if ($entry !== '.' && $entry !== '..' && is_file($coversDir . '/' . $entry)) {
+                        $coverFiles[strtolower($entry)] = $entry;
+                    }
+                }
+            }
         }
+
+        if (strtolower(dirname($clean)) === 'assets/img/covers') {
+            $lowerFile = strtolower(basename($clean));
+            if (isset($coverFiles[$lowerFile])) {
+                return '/assets/img/covers/' . $coverFiles[$lowerFile];
+            }
+        }
+
+        return category_cover($category);
     }
 
     return '/' . $clean;
@@ -695,7 +735,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-1', 'name' => 'Sarah Ahmed', 'handle' => 'sarahahmed'],
             'published_at' => time() - 86400 * 2,
             'read_time' => 6,
-            'cover' => 'assets/img/covers/technology.webp',
+            'cover' => 'assets/img/covers/Technology.png',
             'likes' => 284,
             'comments' => 12,
         ],
@@ -711,7 +751,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-2', 'name' => 'Mehedi Hasan', 'handle' => 'mehedihasan'],
             'published_at' => time() - 86400 * 4,
             'read_time' => 5,
-            'cover' => 'assets/img/covers/travel.webp',
+            'cover' => 'assets/img/covers/Travel.png',
             'likes' => 191,
             'comments' => 8,
         ],
@@ -727,7 +767,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-3', 'name' => 'Nusrat Jahan', 'handle' => 'nusratjahan'],
             'published_at' => time() - 86400 * 8,
             'read_time' => 4,
-            'cover' => 'assets/img/covers/lifestyle.webp',
+            'cover' => 'assets/img/covers/Lifestyle.png',
             'likes' => 156,
             'comments' => 6,
         ],
@@ -743,7 +783,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-4', 'name' => 'Ayesha Rahman', 'handle' => 'ayesha'],
             'published_at' => time() - 86400,
             'read_time' => 5,
-            'cover' => 'assets/img/covers/self-improvement.webp',
+            'cover' => 'assets/img/covers/Self-improvement.png',
             'likes' => 98,
             'comments' => 4,
         ],
@@ -759,7 +799,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-5', 'name' => 'Tanvir Rahman', 'handle' => 'tanvir'],
             'published_at' => time() - 86400 * 3,
             'read_time' => 7,
-            'cover' => 'assets/img/covers/business.webp',
+            'cover' => 'assets/img/covers/Business.png',
             'likes' => 122,
             'comments' => 9,
         ],
@@ -775,7 +815,7 @@ function sample_posts(): array
             'author' => ['id' => 'demo-author-6', 'name' => 'Farhan Karim', 'handle' => 'farhan'],
             'published_at' => time() - 86400 * 6,
             'read_time' => 6,
-            'cover' => 'assets/img/covers/technology.webp',
+            'cover' => 'assets/img/covers/Technology.png',
             'likes' => 203,
             'comments' => 14,
         ],
