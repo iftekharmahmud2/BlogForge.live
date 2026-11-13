@@ -34,12 +34,14 @@ final class Auth
         }
 
         if (!preg_match('~^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2}|\d{4})$~', $dob, $m)) {
-            throw new \RuntimeException('Please enter a valid date of birth in DD/MM/YY format (e.g. 24/05/98).');
+            throw new \RuntimeException('Please enter a valid date of birth (e.g. 24/05/1998 or 24/05/98).');
         }
 
         $day = (int)$m[1];
         $month = (int)$m[2];
-        $year = (int)$m[3];
+        $rawYear = (int)$m[3];
+        $isFourDigit = (strlen($m[3]) === 4);
+        $year = $rawYear;
 
         if ($year < 100) {
             $current2Digit = (int)date('y');
@@ -59,7 +61,9 @@ final class Auth
             throw new \RuntimeException('Please enter a valid date of birth.');
         }
 
-        return sprintf('%02d/%02d/%02d', $day, $month, $year % 100);
+        return $isFourDigit
+            ? sprintf('%02d/%02d/%04d', $day, $month, $year)
+            : sprintf('%02d/%02d/%02d', $day, $month, $year % 100);
     }
 
     public static function assertHandle(string $handle): void

@@ -787,6 +787,8 @@
 
             let fullYear = year;
             let yy = year;
+            const isFourDigit = (m[3].length === 4);
+
             if (year < 100) {
                 fullYear = (year <= current2Digit) ? (2000 + year) : (1900 + year);
                 yy = year;
@@ -805,13 +807,15 @@
             const ddStr = String(day).padStart(2, '0');
             const mmStr = String(month).padStart(2, '0');
             const yyStr = String(yy).padStart(2, '0');
+            const yyyyStr = String(fullYear);
 
             return {
                 day,
                 month,
                 year: fullYear,
                 yy: yyStr,
-                formatted: `${ddStr}/${mmStr}/${yyStr}`,
+                yyyy: yyyyStr,
+                formatted: isFourDigit ? `${ddStr}/${mmStr}/${yyyyStr}` : `${ddStr}/${mmStr}/${yyStr}`,
                 iso: `${fullYear}-${mmStr}-${ddStr}`
             };
         };
@@ -820,152 +824,61 @@
             const wrappers = $$('[data-dob-wrapper]');
             if (!wrappers.length) return;
 
-            const months = [
-                '01 - Jan', '02 - Feb', '03 - Mar', '04 - Apr',
-                '05 - May', '06 - Jun', '07 - Jul', '08 - Aug',
-                '09 - Sep', '10 - Oct', '11 - Nov', '12 - Dec'
-            ];
-
-            const currentYear = new Date().getFullYear();
-
             wrappers.forEach((wrapper) => {
                 const input = $('[data-dob-input]', wrapper);
-                const toggle = $('[data-dob-toggle]', wrapper);
-                const popover = $('[data-dob-popover]', wrapper);
-                const daySelect = $('[data-dob-day]', wrapper);
-                const monthSelect = $('[data-dob-month]', wrapper);
-                const yearSelect = $('[data-dob-year]', wrapper);
-                const applyBtn = $('[data-dob-apply]', wrapper);
-                const closeBtn = $('[data-dob-close]', wrapper);
-                const calBtn = $('[data-dob-calendar-btn]', wrapper);
                 const nativeInput = $('[data-dob-native]', wrapper);
+                const calBtn = $('[data-dob-cal-btn]', wrapper) || $('[data-dob-cal-wrapper]', wrapper);
 
-                if (!input || !popover) return;
+                if (!input) return;
 
-                // Populate Days (01-31)
-                if (daySelect && daySelect.options.length <= 1) {
-                    for (let d = 1; d <= 31; d++) {
-                        const opt = document.createElement('option');
-                        const val = String(d).padStart(2, '0');
-                        opt.value = val;
-                        opt.textContent = val;
-                        daySelect.appendChild(opt);
-                    }
-                }
-
-                // Populate Months (01-12)
-                if (monthSelect && monthSelect.options.length <= 1) {
-                    months.forEach((name, idx) => {
-                        const opt = document.createElement('option');
-                        const val = String(idx + 1).padStart(2, '0');
-                        opt.value = val;
-                        opt.textContent = name;
-                        monthSelect.appendChild(opt);
-                    });
-                }
-
-                // Populate Years (current year down to 100 years ago)
-                if (yearSelect && yearSelect.options.length <= 1) {
-                    for (let y = currentYear; y >= currentYear - 100; y--) {
-                        const opt = document.createElement('option');
-                        const yy = String(y % 100).padStart(2, '0');
-                        opt.value = yy;
-                        opt.textContent = `${yy} (${y})`;
-                        yearSelect.appendChild(opt);
-                    }
-                }
-
-                const syncFromInput = () => {
+                const syncToNative = () => {
+                    if (!nativeInput || !input.value) return;
                     const parsed = parseDob(input.value);
-                    if (parsed) {
-                        if (daySelect) daySelect.value = String(parsed.day).padStart(2, '0');
-                        if (monthSelect) monthSelect.value = String(parsed.month).padStart(2, '0');
-                        if (yearSelect) yearSelect.value = parsed.yy;
-                        if (nativeInput) nativeInput.value = parsed.iso;
+                    if (parsed && parsed.iso) {
+                        nativeInput.value = parsed.iso;
                     }
                 };
 
-                const openPopover = () => {
-                    syncFromInput();
-                    popover.classList.remove('hidden');
+                // Calendar opener
+                const openCalendar = () => {
+                    if (!nativeInput) return;
+                    syncToNative();
+                    if (typeof nativeInput.showPicker === 'function') {
+                        try {
+                            nativeInput.showPicker();
+                            return;
+                        } catch {
+                            // fallback
+                        }
+                    }
+                    nativeInput.focus();
+                    try {
+                        nativeInput.click();
+                    } catch {}
                 };
 
-                const closePopover = () => {
-                    popover.classList.add('hidden');
-                };
-
-                if (toggle) {
-                    toggle.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (popover.classList.contains('hidden')) {
-                            openPopover();
-                        } else {
-                            closePopover();
-                        }
-                    });
-                }
-
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        closePopover();
-                    });
-                }
-
-                if (applyBtn) {
-                    applyBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const d = daySelect ? daySelect.value : '';
-                        const m = monthSelect ? monthSelect.value : '';
-                        const y = yearSelect ? yearSelect.value : '';
-                        if (!d || !m || !y) {
-                            toast('Please select day, month, and year.');
-                            return;
-                        }
-                        const candidate = `${d}/${m}/${y}`;
-                        const parsed = parseDob(candidate);
-                        if (!parsed) {
-                            toast('Selected date is invalid or in the future.');
-                            return;
-                        }
-                        input.value = parsed.formatted;
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
-                        closePopover();
-                    });
-                }
-
-                if (calBtn && nativeInput) {
+                if (calBtn) {
                     calBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (typeof nativeInput.showPicker === 'function') {
-                            try { nativeInput.showPicker(); } catch { nativeInput.click(); }
-                        } else {
-                            nativeInput.click();
-                        }
+                        e.preventDefault();
+                        openCalendar();
                     });
                 }
 
+                // If native calendar value changes, convert YYYY-MM-DD -> DD/MM/YYYY
                 if (nativeInput) {
                     nativeInput.addEventListener('change', () => {
                         if (!nativeInput.value) return;
                         const parts = nativeInput.value.split('-');
                         if (parts.length === 3) {
-                            const [fullYear, mm, dd] = parts;
-                            const yy = fullYear.slice(-2);
-                            const parsed = parseDob(`${dd}/${mm}/${yy}`);
-                            if (parsed) {
-                                input.value = parsed.formatted;
-                                syncFromInput();
-                                input.dispatchEvent(new Event('input', { bubbles: true }));
-                                input.dispatchEvent(new Event('change', { bubbles: true }));
-                                closePopover();
-                            }
+                            const [yyyy, mm, dd] = parts;
+                            input.value = `${dd}/${mm}/${yyyy}`;
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     });
                 }
 
-                // Keyboard typing auto-formatter
+                // Keyboard typing auto-formatter: auto-inserts '/' after 2 digits
                 let isDeleting = false;
                 input.addEventListener('keydown', (e) => {
                     isDeleting = (e.key === 'Backspace' || e.key === 'Delete');
@@ -973,16 +886,46 @@
 
                 input.addEventListener('input', () => {
                     if (isDeleting) return;
+
                     let v = input.value;
-                    if (/^\d{2}$/.test(v)) {
-                        input.value = v + '/';
-                    } else if (/^\d{2}\/\d{2}$/.test(v)) {
-                        input.value = v + '/';
-                    } else if (/^\d{6}$/.test(v)) {
-                        input.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4, 6)}`;
-                    } else if (/^\d{8}$/.test(v)) {
-                        const y = v.slice(4, 8);
-                        input.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${y.slice(-2)}`;
+                    v = v.replace(/[-.]/g, '/').replace(/[^\d/]/g, '').replace(/\/+/g, '/');
+
+                    const parts = v.split('/');
+
+                    if (parts.length === 1) {
+                        const d = parts[0];
+                        if (d.length === 2) {
+                            v = d + '/';
+                        } else if (d.length > 2 && d.length <= 4) {
+                            v = d.slice(0, 2) + '/' + d.slice(2);
+                            if (d.length === 4) v += '/';
+                        } else if (d.length > 4) {
+                            v = d.slice(0, 2) + '/' + d.slice(2, 4) + '/' + d.slice(4, 8);
+                        }
+                    } else if (parts.length === 2) {
+                        const d = parts[0].slice(0, 2);
+                        const m = parts[1];
+                        if (m.length === 2) {
+                            v = d + '/' + m + '/';
+                        } else if (m.length > 2) {
+                            v = d + '/' + m.slice(0, 2) + '/' + m.slice(2, 6);
+                        } else {
+                            v = d + '/' + m;
+                        }
+                    } else if (parts.length >= 3) {
+                        const d = parts[0].slice(0, 2);
+                        const m = parts[1].slice(0, 2);
+                        const y = parts.slice(2).join('').replace(/\D/g, '').slice(0, 4);
+                        v = d + '/' + m + '/' + y;
+                    }
+
+                    if (input.value !== v) {
+                        input.value = v;
+                    }
+
+                    const parsed = parseDob(v);
+                    if (parsed && nativeInput) {
+                        nativeInput.value = parsed.iso;
                     }
                 });
 
@@ -992,19 +935,7 @@
                     const parsed = parseDob(v);
                     if (parsed) {
                         input.value = parsed.formatted;
-                        syncFromInput();
-                    }
-                });
-
-                document.addEventListener('click', (e) => {
-                    if (!wrapper.contains(e.target)) {
-                        closePopover();
-                    }
-                });
-
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && !popover.classList.contains('hidden')) {
-                        closePopover();
+                        if (nativeInput) nativeInput.value = parsed.iso;
                     }
                 });
             });

@@ -178,14 +178,14 @@ function avatar_url(?string $avatar): string
         return '';
     }
 
-    // Local uploads directory (e.g. /uploads/avatars/xyz.webp or uploads/avatars/xyz.webp)
-    if (preg_match('~^/?uploads/(avatars|covers)/[a-zA-Z0-9_\-.]+\.(webp|png|jpe?g|gif)$~i', $avatar)) {
-        return app_url(ltrim($avatar, '/'));
+    // Local uploads directory (e.g. /uploads/avatars/xyz.webp, uploads/..., or with origin prefix)
+    if (preg_match('~^(?:https?://[^/]+)?/?(uploads/(?:avatars|covers)/[a-zA-Z0-9_\-.]+\.(?:webp|png|jpe?g|gif))$~i', $avatar, $m)) {
+        return '/' . $m[1];
     }
 
-    // Local static assets directory (e.g. /assets/... or assets/...)
-    if (preg_match('~^/?assets/[a-zA-Z0-9_\-/.]+\.(webp|png|jpe?g|gif|svg)$~i', $avatar)) {
-        return app_url(ltrim($avatar, '/'));
+    // Local static assets directory (e.g. /assets/... or with origin prefix)
+    if (preg_match('~^(?:https?://[^/]+)?/?(assets/[a-zA-Z0-9_\-/.]+\.(?:webp|png|jpe?g|gif|svg))$~i', $avatar, $m)) {
+        return '/' . $m[1];
     }
 
     // Direct Data URI format
