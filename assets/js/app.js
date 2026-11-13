@@ -756,6 +756,251 @@
         };
 
         // ----------------------------------------------------
+        // 8.5 Date of Birth Helper & Picker (DD/MM/YY)
+        // ----------------------------------------------------
+        const parseDob = (str) => {
+            if (!str || typeof str !== 'string') return null;
+            const clean = str.trim();
+            const m = clean.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2}|\d{4})$/);
+            if (!m) return null;
+            const day = parseInt(m[1], 10);
+            const month = parseInt(m[2], 10);
+            let year = parseInt(m[3], 10);
+
+            if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const current2Digit = currentYear % 100;
+
+            let fullYear = year;
+            let yy = year;
+            if (year < 100) {
+                fullYear = (year <= current2Digit) ? (2000 + year) : (1900 + year);
+                yy = year;
+            } else {
+                yy = year % 100;
+            }
+
+            if (fullYear < currentYear - 120) return null;
+
+            const daysInMonth = new Date(fullYear, month, 0).getDate();
+            if (day > daysInMonth) return null;
+
+            const dateObj = new Date(fullYear, month - 1, day);
+            if (dateObj > now) return null;
+
+            const ddStr = String(day).padStart(2, '0');
+            const mmStr = String(month).padStart(2, '0');
+            const yyStr = String(yy).padStart(2, '0');
+
+            return {
+                day,
+                month,
+                year: fullYear,
+                yy: yyStr,
+                formatted: `${ddStr}/${mmStr}/${yyStr}`,
+                iso: `${fullYear}-${mmStr}-${ddStr}`
+            };
+        };
+
+        const initDobPickers = () => {
+            const wrappers = $$('[data-dob-wrapper]');
+            if (!wrappers.length) return;
+
+            const months = [
+                '01 - Jan', '02 - Feb', '03 - Mar', '04 - Apr',
+                '05 - May', '06 - Jun', '07 - Jul', '08 - Aug',
+                '09 - Sep', '10 - Oct', '11 - Nov', '12 - Dec'
+            ];
+
+            const currentYear = new Date().getFullYear();
+
+            wrappers.forEach((wrapper) => {
+                const input = $('[data-dob-input]', wrapper);
+                const toggle = $('[data-dob-toggle]', wrapper);
+                const popover = $('[data-dob-popover]', wrapper);
+                const daySelect = $('[data-dob-day]', wrapper);
+                const monthSelect = $('[data-dob-month]', wrapper);
+                const yearSelect = $('[data-dob-year]', wrapper);
+                const applyBtn = $('[data-dob-apply]', wrapper);
+                const closeBtn = $('[data-dob-close]', wrapper);
+                const calBtn = $('[data-dob-calendar-btn]', wrapper);
+                const nativeInput = $('[data-dob-native]', wrapper);
+
+                if (!input || !popover) return;
+
+                // Populate Days (01-31)
+                if (daySelect && daySelect.options.length <= 1) {
+                    for (let d = 1; d <= 31; d++) {
+                        const opt = document.createElement('option');
+                        const val = String(d).padStart(2, '0');
+                        opt.value = val;
+                        opt.textContent = val;
+                        daySelect.appendChild(opt);
+                    }
+                }
+
+                // Populate Months (01-12)
+                if (monthSelect && monthSelect.options.length <= 1) {
+                    months.forEach((name, idx) => {
+                        const opt = document.createElement('option');
+                        const val = String(idx + 1).padStart(2, '0');
+                        opt.value = val;
+                        opt.textContent = name;
+                        monthSelect.appendChild(opt);
+                    });
+                }
+
+                // Populate Years (current year down to 100 years ago)
+                if (yearSelect && yearSelect.options.length <= 1) {
+                    for (let y = currentYear; y >= currentYear - 100; y--) {
+                        const opt = document.createElement('option');
+                        const yy = String(y % 100).padStart(2, '0');
+                        opt.value = yy;
+                        opt.textContent = `${yy} (${y})`;
+                        yearSelect.appendChild(opt);
+                    }
+                }
+
+                const syncFromInput = () => {
+                    const parsed = parseDob(input.value);
+                    if (parsed) {
+                        if (daySelect) daySelect.value = String(parsed.day).padStart(2, '0');
+                        if (monthSelect) monthSelect.value = String(parsed.month).padStart(2, '0');
+                        if (yearSelect) yearSelect.value = parsed.yy;
+                        if (nativeInput) nativeInput.value = parsed.iso;
+                    }
+                };
+
+                const openPopover = () => {
+                    syncFromInput();
+                    popover.classList.remove('hidden');
+                };
+
+                const closePopover = () => {
+                    popover.classList.add('hidden');
+                };
+
+                if (toggle) {
+                    toggle.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (popover.classList.contains('hidden')) {
+                            openPopover();
+                        } else {
+                            closePopover();
+                        }
+                    });
+                }
+
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        closePopover();
+                    });
+                }
+
+                if (applyBtn) {
+                    applyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const d = daySelect ? daySelect.value : '';
+                        const m = monthSelect ? monthSelect.value : '';
+                        const y = yearSelect ? yearSelect.value : '';
+                        if (!d || !m || !y) {
+                            toast('Please select day, month, and year.');
+                            return;
+                        }
+                        const candidate = `${d}/${m}/${y}`;
+                        const parsed = parseDob(candidate);
+                        if (!parsed) {
+                            toast('Selected date is invalid or in the future.');
+                            return;
+                        }
+                        input.value = parsed.formatted;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        closePopover();
+                    });
+                }
+
+                if (calBtn && nativeInput) {
+                    calBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (typeof nativeInput.showPicker === 'function') {
+                            try { nativeInput.showPicker(); } catch { nativeInput.click(); }
+                        } else {
+                            nativeInput.click();
+                        }
+                    });
+                }
+
+                if (nativeInput) {
+                    nativeInput.addEventListener('change', () => {
+                        if (!nativeInput.value) return;
+                        const parts = nativeInput.value.split('-');
+                        if (parts.length === 3) {
+                            const [fullYear, mm, dd] = parts;
+                            const yy = fullYear.slice(-2);
+                            const parsed = parseDob(`${dd}/${mm}/${yy}`);
+                            if (parsed) {
+                                input.value = parsed.formatted;
+                                syncFromInput();
+                                input.dispatchEvent(new Event('input', { bubbles: true }));
+                                input.dispatchEvent(new Event('change', { bubbles: true }));
+                                closePopover();
+                            }
+                        }
+                    });
+                }
+
+                // Keyboard typing auto-formatter
+                let isDeleting = false;
+                input.addEventListener('keydown', (e) => {
+                    isDeleting = (e.key === 'Backspace' || e.key === 'Delete');
+                });
+
+                input.addEventListener('input', () => {
+                    if (isDeleting) return;
+                    let v = input.value;
+                    if (/^\d{2}$/.test(v)) {
+                        input.value = v + '/';
+                    } else if (/^\d{2}\/\d{2}$/.test(v)) {
+                        input.value = v + '/';
+                    } else if (/^\d{6}$/.test(v)) {
+                        input.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4, 6)}`;
+                    } else if (/^\d{8}$/.test(v)) {
+                        const y = v.slice(4, 8);
+                        input.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${y.slice(-2)}`;
+                    }
+                });
+
+                input.addEventListener('blur', () => {
+                    const v = input.value.trim();
+                    if (!v) return;
+                    const parsed = parseDob(v);
+                    if (parsed) {
+                        input.value = parsed.formatted;
+                        syncFromInput();
+                    }
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!wrapper.contains(e.target)) {
+                        closePopover();
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && !popover.classList.contains('hidden')) {
+                        closePopover();
+                    }
+                });
+            });
+        };
+
+        initDobPickers();
+
+        // ----------------------------------------------------
         // 9. Auth Form Handler (Email sign-in & registration)
         // ----------------------------------------------------
         const authForm = $('[data-auth-form]');
@@ -823,6 +1068,18 @@
                         markInvalid(hInput);
                         return showError(errBox, 'Username must be 3–30 characters: letters, numbers, dashes or underscores.');
                     }
+                    const dobInput = field('dob');
+                    const rawDob = val('dob');
+                    if (!rawDob) {
+                        markInvalid(dobInput);
+                        return showError(errBox, 'Please enter your date of birth (DD/MM/YY).');
+                    }
+                    const parsedDob = parseDob(rawDob);
+                    if (!parsedDob) {
+                        markInvalid(dobInput);
+                        return showError(errBox, 'Please enter a valid date of birth in DD/MM/YY format (e.g. 24/05/98).');
+                    }
+                    dobInput.value = parsedDob.formatted;
                 }
                 if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email')) && (mode === 'register' || val('email').includes('@'))) {
                     markInvalid(field('email'));
@@ -848,6 +1105,10 @@
                 payload.terms = Boolean(field('terms')?.checked);
                 if (payload.handle) {
                     payload.handle = String(payload.handle).replace(/^@/, '').trim().toLowerCase();
+                }
+                if (payload.dob) {
+                    const parsedDob = parseDob(payload.dob);
+                    if (parsedDob) payload.dob = parsedDob.formatted;
                 }
 
                 const submitBtn = $('button[type=submit]', authForm);
@@ -908,6 +1169,14 @@
                 if (!/^@?[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/.test(String(payload.handle || '').trim())) {
                     markInvalid(profileForm.elements.handle);
                     return showError(errBox, 'Username must be 3–30 characters: letters, numbers, dashes or underscores.');
+                }
+                if (payload.dob && String(payload.dob).trim() !== '') {
+                    const parsedDob = parseDob(String(payload.dob));
+                    if (!parsedDob) {
+                        markInvalid(profileForm.elements.dob);
+                        return showError(errBox, 'Please enter a valid date of birth in DD/MM/YY format (e.g. 24/05/98).');
+                    }
+                    payload.dob = parsedDob.formatted;
                 }
 
                 const submitBtn = $('button[type=submit]', profileForm);

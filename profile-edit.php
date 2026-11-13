@@ -74,6 +74,50 @@ require __DIR__ . '/partials/header.php';
             </div>
 
             <div>
+                <label for="dob" class="block text-xs font-semibold text-gray-700 mb-1.5">Date of birth <span class="text-gray-400 font-normal">(optional)</span></label>
+                <div data-input-wrapper data-dob-wrapper class="relative flex items-center border border-[#e9e5df] rounded-xl bg-[#fbfaf8] focus-within:border-[#ff9a3c] focus-within:ring-2 focus-within:ring-orange-100 transition shadow-sm">
+                    <input class="w-full bg-transparent border-0 outline-none px-4 py-2.5 text-sm" id="dob" name="dob" placeholder="DD/MM/YY" maxlength="10" autocomplete="bday" inputmode="numeric" value="<?= e((string)($u['dob'] ?? '')) ?>" data-dob-input>
+                    <button type="button" data-dob-toggle class="pr-3 pl-2 text-gray-400 hover:text-[#ff6b13] transition focus:outline-none cursor-pointer" title="Select date" aria-label="Open date picker">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </button>
+                    <input type="date" data-dob-native tabindex="-1" class="sr-only" max="<?= date('Y-m-d') ?>" min="1920-01-01">
+
+                    <!-- Dropdown Birthday Picker -->
+                    <div data-dob-popover class="hidden absolute right-0 top-full mt-2 w-72 bg-white border border-[#e9e5df] rounded-2xl shadow-xl p-4 z-50 text-xs">
+                        <div class="flex items-center justify-between pb-2 mb-3 border-b border-gray-100">
+                            <span class="font-bold text-gray-800 text-xs">Select Date of Birth</span>
+                            <button type="button" data-dob-close class="text-gray-400 hover:text-gray-700 text-sm font-bold p-1 cursor-pointer">✕</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Day</label>
+                                <select data-dob-day class="w-full bg-[#fbfaf8] border border-[#e9e5df] rounded-lg px-2 py-1.5 text-xs text-gray-800 outline-none focus:border-[#ff9a3c]">
+                                    <option value="">DD</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Month</label>
+                                <select data-dob-month class="w-full bg-[#fbfaf8] border border-[#e9e5df] rounded-lg px-2 py-1.5 text-xs text-gray-800 outline-none focus:border-[#ff9a3c]">
+                                    <option value="">MM</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Year</label>
+                                <select data-dob-year class="w-full bg-[#fbfaf8] border border-[#e9e5df] rounded-lg px-2 py-1.5 text-xs text-gray-800 outline-none focus:border-[#ff9a3c]">
+                                    <option value="">YY</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <button type="button" data-dob-calendar-btn class="text-[11px] text-[#ff6b13] hover:underline font-medium cursor-pointer">Calendar view</button>
+                            <button type="button" data-dob-apply class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white font-semibold text-xs shadow-sm hover:brightness-105 cursor-pointer">Set date</button>
+                        </div>
+                    </div>
+                </div>
+                <small class="block text-[11px] text-gray-400 mt-1">Format: DD/MM/YY (type directly or click calendar to select)</small>
+            </div>
+
+            <div>
                 <label for="email" class="block text-xs font-semibold text-gray-700 mb-1.5">Email address</label>
                 <input class="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed" id="email" type="email" value="<?= e((string)($u['email'] ?? '')) ?>" disabled>
                 <small class="block text-[11px] text-gray-400 mt-1">Email address cannot be changed right now.</small>

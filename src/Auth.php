@@ -26,6 +26,42 @@ final class Auth
         return ltrim(strtolower(trim($handle)), '@');
     }
 
+    public static function assertDob(string $dob): string
+    {
+        $dob = trim($dob);
+        if ($dob === '') {
+            throw new \RuntimeException('Please enter your date of birth.');
+        }
+
+        if (!preg_match('~^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2}|\d{4})$~', $dob, $m)) {
+            throw new \RuntimeException('Please enter a valid date of birth in DD/MM/YY format (e.g. 24/05/98).');
+        }
+
+        $day = (int)$m[1];
+        $month = (int)$m[2];
+        $year = (int)$m[3];
+
+        if ($year < 100) {
+            $current2Digit = (int)date('y');
+            $year = ($year <= $current2Digit) ? (2000 + $year) : (1900 + $year);
+        }
+
+        if (!checkdate($month, $day, $year)) {
+            throw new \RuntimeException('The date of birth provided is not a valid calendar date.');
+        }
+
+        $dobTimestamp = mktime(0, 0, 0, $month, $day, $year);
+        if ($dobTimestamp > time()) {
+            throw new \RuntimeException('Date of birth cannot be in the future.');
+        }
+
+        if ($year < (int)date('Y') - 120) {
+            throw new \RuntimeException('Please enter a valid date of birth.');
+        }
+
+        return sprintf('%02d/%02d/%02d', $day, $month, $year % 100);
+    }
+
     public static function assertHandle(string $handle): void
     {
         if ($handle === '') {
@@ -155,7 +191,8 @@ final class Auth
         string $password,
         string $confirmPassword,
         bool $acceptedTerms,
-        string $handle = ''
+        string $handle = '',
+        string $dob = ''
     ): array {
         $db = self::requireDb();
 
@@ -163,6 +200,7 @@ final class Auth
         $lastName = self::cleanName($lastName);
         $email = strtolower(trim($email));
         $handle = self::cleanHandle($handle);
+        $dob = self::assertDob($dob);
 
         self::assertName($firstName, 'First name');
         self::assertName($lastName, 'Last name');
@@ -201,6 +239,7 @@ final class Auth
             'name' => trim($firstName . ' ' . $lastName),
             'email' => $email,
             'handle' => $handle,
+            'dob' => $dob,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             'role' => 'author',
             'bio' => '',
@@ -268,7 +307,7 @@ final class Auth
 
         $name = trim($firstName . ' ' . $lastName);
 
-        $db->users->updateOne(['_id' => $oid], ['$set' => [
+        $set = [
             'first_name' => $firstName,
             'last_name' => $lastName,
             'name' => $name,
@@ -276,7 +315,14 @@ final class Auth
             'bio' => $bio,
             'avatar' => $avatar,
             'updated_at' => new UTCDateTime(),
-        ]]);
+        ];
+
+        if (isset($input['dob'])) {
+            $rawDob = trim((string)$input['dob']);
+            $set['dob'] = $rawDob !== '' ? self::assertDob($rawDob) : '';
+        }
+
+        $db->users->updateOne(['_id' => $oid], ['$set' => $set]);
 
         // Keep denormalised author info on stories & comments in sync
         $authorSet = ['author.name' => $name, 'author.handle' => $handle, 'author.avatar' => $avatar];
@@ -481,6 +527,7 @@ final class Auth
             'name' => (string)($user['name'] ?? 'Author'),
             'email' => (string)($user['email'] ?? ''),
             'handle' => (string)($user['handle'] ?? ''),
+            'dob' => (string)($user['dob'] ?? ''),
             'role' => (string)($user['role'] ?? 'author'),
             'avatar' => (string)($user['avatar'] ?? ''),
         ];

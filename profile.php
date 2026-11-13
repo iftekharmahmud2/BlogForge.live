@@ -85,6 +85,10 @@ require __DIR__ . '/partials/header.php';
                         <b class="text-gray-900 font-semibold"><?= count($recentComments) ?> <?= count($recentComments) === 1 ? 'response' : 'responses' ?></b>
                         <span>·</span>
                         <span>Role: <?= e($roleLabel) ?></span>
+                        <?php if ($isOwnProfile && !empty($u['dob'])): ?>
+                            <span>·</span>
+                            <span>Born: <?= e((string)$u['dob']) ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

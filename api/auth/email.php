@@ -42,7 +42,8 @@ try {
             (string)($d['password'] ?? ''),
             (string)($d['confirm_password'] ?? ''),
             filter_var($d['terms'] ?? false, FILTER_VALIDATE_BOOLEAN),
-            (string)($d['handle'] ?? $d['username'] ?? '')
+            (string)($d['handle'] ?? $d['username'] ?? ''),
+            (string)($d['dob'] ?? '')
         );
     } else {
         $user = Auth::loginEmail(
