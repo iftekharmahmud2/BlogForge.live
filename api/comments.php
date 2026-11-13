@@ -70,6 +70,7 @@ if ($method === 'POST') {
 
     try {
         $id = $repo->add($postId, $body, $user);
+        $liveUser = \BlogForge\Auth::fetchUser((string)$user['id']) ?? $user;
         json_response([
             'ok' => true,
             'id' => $id,
@@ -79,10 +80,10 @@ if ($method === 'POST') {
                 'body' => $body,
                 'author' => [
                     'id' => (string)$user['id'],
-                    'name' => (string)$user['name'],
-                    'handle' => (string)($user['handle'] ?? ''),
-                    'avatar' => avatar_url((string)($user['avatar'] ?? '')),
-                    'profile_url' => profile_url($user),
+                    'name' => (string)($liveUser['name'] ?? $user['name']),
+                    'handle' => (string)($liveUser['handle'] ?? $user['handle'] ?? ''),
+                    'avatar' => avatar_url((string)($liveUser['avatar'] ?? $user['avatar'] ?? '')),
+                    'profile_url' => profile_url($liveUser),
                 ],
                 'created_at' => time(),
             ],

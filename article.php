@@ -76,7 +76,7 @@ require __DIR__ . '/partials/header.php';
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-5 border-y border-gray-200 mb-8">
         <a href="<?= e($authorProfileUrl) ?>" class="flex items-center gap-3 group" title="View <?= e($authorName) ?>'s profile">
             <?php if ($authorAvatar !== ''): ?>
-                <img data-avatar-img src="<?= e($authorAvatar) ?>" alt="<?= e($authorName) ?>" class="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0 shadow-sm group-hover:ring-2 group-hover:ring-orange-200 transition">
+                <img data-avatar-img src="<?= e($authorAvatar) ?>" alt="<?= e($authorName) ?>" class="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0 shadow-sm group-hover:ring-2 group-hover:ring-orange-200 transition" loading="eager" decoding="async">
                 <span data-avatar-fallback class="hidden w-11 h-11 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-sm shrink-0 shadow-sm">
                     <?= e(initials($authorName)) ?>
                 </span>
@@ -154,7 +154,7 @@ require __DIR__ . '/partials/header.php';
         <div class="flex items-center gap-3">
             <a href="<?= e($authorProfileUrl) ?>" class="shrink-0 group" title="View <?= e($authorName) ?>'s profile">
                 <?php if ($authorAvatar !== ''): ?>
-                    <img data-avatar-img src="<?= e($authorAvatar) ?>" alt="<?= e($authorName) ?>" class="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover:ring-2 group-hover:ring-orange-200 transition">
+                    <img data-avatar-img src="<?= e($authorAvatar) ?>" alt="<?= e($authorName) ?>" class="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover:ring-2 group-hover:ring-orange-200 transition" loading="eager" decoding="async">
                     <span data-avatar-fallback class="hidden w-10 h-10 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-xs">
                         <?= e(initials($authorName)) ?>
                     </span>
@@ -209,7 +209,7 @@ require __DIR__ . '/partials/header.php';
                     <div class="py-5 flex items-start gap-3.5">
                         <a href="<?= e($cProfileUrl) ?>" class="shrink-0 group" title="View <?= e($cName) ?>'s profile">
                             <?php if ($cAvatar !== ''): ?>
-                                <img data-avatar-img src="<?= e($cAvatar) ?>" alt="<?= e($cName) ?>" class="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm group-hover:ring-2 group-hover:ring-orange-200 transition">
+                                <img data-avatar-img src="<?= e($cAvatar) ?>" alt="<?= e($cName) ?>" class="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm group-hover:ring-2 group-hover:ring-orange-200 transition" loading="eager" decoding="async">
                                 <span data-avatar-fallback class="hidden w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-xs shadow-sm">
                                     <?= e(initials($cName)) ?>
                                 </span>

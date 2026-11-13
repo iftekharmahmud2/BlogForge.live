@@ -69,6 +69,18 @@
         const baseUrl = window.BLOGFORGE?.baseUrl || '';
         const isLoggedIn = Boolean(window.BLOGFORGE?.loggedIn);
 
+        // Safe Avatar URL Resolver (HTTPS, local /uploads/avatars/..., and data URI)
+        const resolveAvatarUrl = (url) => {
+            if (!url || typeof url !== 'string') return '';
+            const clean = url.trim();
+            if (!clean) return '';
+            if (/^https?:\/\//i.test(clean) || clean.startsWith('data:image/')) return clean;
+            if (/^\/?uploads\//i.test(clean) || /^\/?assets\//i.test(clean)) {
+                return baseUrl + '/' + clean.replace(/^\/+/, '');
+            }
+            return clean;
+        };
+
         // ----------------------------------------------------
         // 0. Graceful Image Fallbacks (Cover & Avatar safety net)
         // ----------------------------------------------------
@@ -289,12 +301,12 @@
                             : (authorHandle
                                 ? `${baseUrl}/profile.php?handle=${encodeURIComponent(authorHandle)}`
                                 : `${baseUrl}/profile.php?id=${encodeURIComponent(String(author.id || ''))}`);
-                        const safeAvatar = (author.avatar && /^https?:\/\//i.test(String(author.avatar))) ? String(author.avatar) : '';
+                        const safeAvatar = resolveAvatarUrl(author.avatar);
                         const nameParts = authorName.trim().split(/\s+/).filter(Boolean);
                         const authorInitials = ((nameParts[0]?.[0] || '') + (nameParts[1]?.[0] || nameParts[0]?.[1] || '')).toUpperCase() || 'A';
 
                         const avatarHtml = safeAvatar
-                            ? `<img data-avatar-img src="${escapeHtml(safeAvatar)}" alt="${escapeHtml(authorName)}" class="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm"><span data-avatar-fallback class="hidden w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-xs shadow-sm">${escapeHtml(authorInitials)}</span>`
+                            ? `<img data-avatar-img src="${escapeHtml(safeAvatar)}" alt="${escapeHtml(authorName)}" class="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm" loading="eager" decoding="async"><span data-avatar-fallback class="hidden w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white items-center justify-center font-bold text-xs shadow-sm">${escapeHtml(authorInitials)}</span>`
                             : `<span class="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-900 to-[#ff7b22] text-white flex items-center justify-center font-bold text-xs shadow-sm">${escapeHtml(authorInitials)}</span>`;
 
                         const newComment = document.createElement('div');
@@ -1137,23 +1149,116 @@
             const avatarInput = profileForm.elements.avatar;
             const avatarPreview = $('[data-avatar-preview]');
             const initialsText = avatarPreview ? (avatarPreview.dataset.initials || avatarPreview.textContent.trim()) : '';
-            if (avatarInput && avatarPreview) {
-                const syncAvatarPreview = () => {
-                    const url = avatarInput.value.trim();
+            const uploadBtn = $('[data-avatar-upload-btn]', profileForm) || $('[data-avatar-upload-btn]');
+            const browseBtn = $('[data-avatar-browse-btn]', profileForm);
+            const fileInput = $('[data-avatar-file]', profileForm) || $('[data-avatar-file]');
+            const removeBtn = $('[data-avatar-remove-btn]', profileForm) || $('[data-avatar-remove-btn]');
+            const statusEl = $('[data-avatar-status]', profileForm) || $('[data-avatar-status]');
+
+            const syncAvatarPreview = () => {
+                const raw = avatarInput ? avatarInput.value.trim() : '';
+                const resolved = resolveAvatarUrl(raw);
+                if (avatarPreview) {
                     avatarPreview.textContent = '';
-                    if (/^https?:\/\//i.test(url)) {
+                    if (resolved) {
                         const img = document.createElement('img');
                         img.alt = '';
                         img.className = 'w-full h-full object-cover';
-                        img.src = url;
+                        img.src = resolved;
                         img.onerror = () => { avatarPreview.textContent = initialsText; };
                         avatarPreview.appendChild(img);
                     } else {
                         avatarPreview.textContent = initialsText;
                     }
-                };
+                }
+                if (removeBtn) {
+                    if (raw) {
+                        removeBtn.classList.remove('hidden');
+                    } else {
+                        removeBtn.classList.add('hidden');
+                    }
+                }
+            };
+
+            if (avatarInput) {
                 avatarInput.addEventListener('change', syncAvatarPreview);
                 avatarInput.addEventListener('input', syncAvatarPreview);
+            }
+
+            const openAvatarPicker = () => {
+                if (fileInput) fileInput.click();
+            };
+
+            if (uploadBtn) uploadBtn.addEventListener('click', openAvatarPicker);
+            if (browseBtn) browseBtn.addEventListener('click', openAvatarPicker);
+
+            if (removeBtn) {
+                removeBtn.addEventListener('click', () => {
+                    if (avatarInput) avatarInput.value = '';
+                    if (fileInput) fileInput.value = '';
+                    syncAvatarPreview();
+                    toast('Profile photo removed. Click "Save changes" to apply.');
+                });
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', async (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+
+                    if (file.size > 2 * 1024 * 1024) {
+                        toast('Image exceeds 2MB limit. Please choose a file under 2MB.');
+                        fileInput.value = '';
+                        return;
+                    }
+
+                    if (!file.type.match(/^image\/(jpeg|png|webp|gif)$/i)) {
+                        toast('Please select a valid image file (JPG, PNG, WebP, or GIF).');
+                        fileInput.value = '';
+                        return;
+                    }
+
+                    if (statusEl) {
+                        statusEl.textContent = 'Optimizing image…';
+                        statusEl.classList.remove('hidden');
+                    }
+
+                    try {
+                        // High-speed compression into 256x256 WebP (~15KB)
+                        const compressedWebP = await compressImageToWebP(file, 256, 0.85);
+
+                        // Instant local preview in circular avatar
+                        if (avatarPreview) {
+                            avatarPreview.textContent = '';
+                            const img = document.createElement('img');
+                            img.alt = '';
+                            img.className = 'w-full h-full object-cover';
+                            img.src = compressedWebP;
+                            avatarPreview.appendChild(img);
+                        }
+
+                        if (statusEl) statusEl.textContent = 'Uploading…';
+
+                        const res = await api(baseUrl + '/api/upload.php', {
+                            method: 'POST',
+                            body: { image: compressedWebP, type: 'avatar' },
+                        });
+
+                        const finalUrl = res.url || compressedWebP;
+                        if (avatarInput) avatarInput.value = finalUrl;
+                        if (removeBtn) removeBtn.classList.remove('hidden');
+
+                        if (statusEl) {
+                            statusEl.textContent = '✓ Ready to save';
+                            setTimeout(() => { statusEl.classList.add('hidden'); }, 3000);
+                        }
+                        toast('Photo uploaded & optimized! Click "Save changes" to apply.');
+                    } catch (err) {
+                        console.error('Avatar upload error:', err);
+                        toast('Upload failed: ' + err.message);
+                        if (statusEl) statusEl.classList.add('hidden');
+                    }
+                });
             }
 
             profileForm.addEventListener('submit', async (e) => {
@@ -1177,6 +1282,10 @@
                         return showError(errBox, 'Please enter a valid date of birth in DD/MM/YY format (e.g. 24/05/98).');
                     }
                     payload.dob = parsedDob.formatted;
+                }
+
+                if (payload.avatar !== undefined) {
+                    payload.avatar = String(payload.avatar).trim();
                 }
 
                 const submitBtn = $('button[type=submit]', profileForm);

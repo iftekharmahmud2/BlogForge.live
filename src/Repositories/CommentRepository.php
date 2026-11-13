@@ -78,30 +78,56 @@ final class CommentRepository
             return [];
         }
 
-        // Batch-enrich commenter name, handle, and avatar from live users collection
+        // Batch-enrich commenter name, handle, and avatar from live users collection (by ID and handle)
         $userOids = [];
+        $handles = [];
         foreach ($comments as $c) {
-            $uid = (string)($c['author']['id'] ?? '');
+            $author = is_array($c['author'] ?? null) ? $c['author'] : [];
+            $uid = (string)($author['id'] ?? '');
             if ($uid !== '' && ($uOid = oid($uid))) {
                 $userOids[(string)$uOid] = $uOid;
             }
+            $h = ltrim(trim((string)($author['handle'] ?? '')), '@');
+            if ($h !== '') {
+                $handles[strtolower($h)] = $h;
+            }
         }
 
-        if (!empty($userOids)) {
+        if (!empty($userOids) || !empty($handles)) {
+            $or = [];
+            if (!empty($userOids)) {
+                $or[] = ['_id' => ['$in' => array_values($userOids)]];
+            }
+            if (!empty($handles)) {
+                $or[] = ['handle' => ['$in' => array_values($handles)]];
+            }
+            $filter = count($or) === 1 ? $or[0] : ['$or' => $or];
             $uCursor = $db->users->find(
-                ['_id' => ['$in' => array_values($userOids)]],
+                $filter,
                 ['projection' => ['name' => 1, 'handle' => 1, 'avatar' => 1]]
             );
             $usersById = [];
+            $usersByHandle = [];
             foreach ($uCursor as $uDoc) {
                 $u = normalize_mongo($uDoc);
-                $usersById[(string)$u['_id']] = $u;
+                $uId = (string)($u['_id'] ?? '');
+                if ($uId !== '') {
+                    $usersById[$uId] = $u;
+                }
+                $uHandle = strtolower(ltrim((string)($u['handle'] ?? ''), '@'));
+                if ($uHandle !== '') {
+                    $usersByHandle[$uHandle] = $u;
+                }
             }
 
             foreach ($comments as &$c) {
+                if (!isset($c['author']) || !is_array($c['author'])) {
+                    continue;
+                }
                 $uid = (string)($c['author']['id'] ?? '');
-                if (isset($usersById[$uid])) {
-                    $liveUser = $usersById[$uid];
+                $uHandle = strtolower(ltrim((string)($c['author']['handle'] ?? ''), '@'));
+                $liveUser = $usersById[$uid] ?? $usersByHandle[$uHandle] ?? null;
+                if ($liveUser) {
                     $c['author']['name'] = (string)($liveUser['name'] ?? $c['author']['name'] ?? 'Reader');
                     $c['author']['handle'] = (string)($liveUser['handle'] ?? $c['author']['handle'] ?? '');
                     $c['author']['avatar'] = (string)($liveUser['avatar'] ?? $c['author']['avatar'] ?? '');

@@ -301,8 +301,13 @@ final class Auth
         }
 
         $avatar = trim((string)($input['avatar'] ?? ''));
-        if ($avatar !== '' && (!preg_match('~^https?://~i', $avatar) || !filter_var($avatar, FILTER_VALIDATE_URL) || mb_strlen($avatar) > 1000)) {
-            throw new \RuntimeException('Profile photo must be a valid http(s) image URL.');
+        if ($avatar !== '') {
+            $isHttp = (bool)preg_match('~^https?://~i', $avatar) && filter_var($avatar, FILTER_VALIDATE_URL) && mb_strlen($avatar) <= 1000;
+            $isLocal = (bool)preg_match('~^/?uploads/avatars/[a-zA-Z0-9_\-.]+\.(webp|png|jpe?g|gif)$~i', $avatar);
+            $isDataUri = (bool)str_starts_with($avatar, 'data:image/') && mb_strlen($avatar) <= 500 * 1024;
+            if (!$isHttp && !$isLocal && !$isDataUri) {
+                throw new \RuntimeException('Profile photo must be a valid image link or uploaded file under 2MB.');
+            }
         }
 
         $name = trim($firstName . ' ' . $lastName);
@@ -324,10 +329,21 @@ final class Auth
 
         $db->users->updateOne(['_id' => $oid], ['$set' => $set]);
 
-        // Keep denormalised author info on stories & comments in sync
+        // Keep denormalised author info on stories & comments in sync across all author identifier variants
         $authorSet = ['author.name' => $name, 'author.handle' => $handle, 'author.avatar' => $avatar];
-        $db->posts->updateMany(['author.id' => $userId], ['$set' => $authorSet]);
-        $db->comments->updateMany(['author.id' => $userId], ['$set' => $authorSet]);
+        $authorFilterOr = [
+            ['author.id' => $userId],
+            ['author.handle' => $handle],
+        ];
+        $previousHandle = (string)($user['handle'] ?? '');
+        if ($previousHandle !== '' && strcasecmp($previousHandle, $handle) !== 0) {
+            $authorFilterOr[] = ['author.handle' => $previousHandle];
+        }
+        if ($oid) {
+            $authorFilterOr[] = ['author.id' => $oid];
+        }
+        $db->posts->updateMany(['$or' => $authorFilterOr], ['$set' => $authorSet]);
+        $db->comments->updateMany(['$or' => $authorFilterOr], ['$set' => $authorSet]);
 
         $fresh = $db->users->findOne(['_id' => $oid]);
         $session = self::sessionUser($fresh);

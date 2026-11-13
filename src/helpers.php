@@ -169,12 +169,32 @@ function profile_url(array $author): string
 }
 
 /**
- * Resolve a safe HTTP/HTTPS avatar URL, rejecting expired social CDN URLs or invalid links.
+ * Resolve a safe avatar URL supporting local uploads, data URIs, and valid HTTPS image links.
  */
 function avatar_url(?string $avatar): string
 {
     $avatar = trim((string)$avatar);
-    if ($avatar === '' || !preg_match('~^https?://~i', $avatar) || !filter_var($avatar, FILTER_VALIDATE_URL)) {
+    if ($avatar === '') {
+        return '';
+    }
+
+    // Local uploads directory (e.g. /uploads/avatars/xyz.webp or uploads/avatars/xyz.webp)
+    if (preg_match('~^/?uploads/(avatars|covers)/[a-zA-Z0-9_\-.]+\.(webp|png|jpe?g|gif)$~i', $avatar)) {
+        return app_url(ltrim($avatar, '/'));
+    }
+
+    // Local static assets directory (e.g. /assets/... or assets/...)
+    if (preg_match('~^/?assets/[a-zA-Z0-9_\-/.]+\.(webp|png|jpe?g|gif|svg)$~i', $avatar)) {
+        return app_url(ltrim($avatar, '/'));
+    }
+
+    // Direct Data URI format
+    if (str_starts_with($avatar, 'data:image/')) {
+        return $avatar;
+    }
+
+    // Remote HTTP/HTTPS URL
+    if (!preg_match('~^https?://~i', $avatar) || !filter_var($avatar, FILTER_VALIDATE_URL)) {
         return '';
     }
 
@@ -189,14 +209,14 @@ function avatar_url(?string $avatar): string
 /**
  * Render inner avatar image with an adjacent initials fallback element for app.js error handling.
  */
-function avatar_inner(?string $avatar, string $name, bool $lazy = true): string
+function avatar_inner(?string $avatar, string $name, bool $lazy = false): string
 {
     $label = trim($name) !== '' ? $name : 'Author';
     $init = e(initials($label));
     $safeAvatar = avatar_url($avatar);
 
     if ($safeAvatar !== '') {
-        $loadingAttr = $lazy ? ' loading="lazy"' : '';
+        $loadingAttr = $lazy ? ' loading="lazy"' : ' loading="eager" decoding="async"';
         return '<img data-avatar-img src="' . e($safeAvatar) . '" alt="' . e($label) . '" class="w-full h-full object-cover"' . $loadingAttr . '>'
             . '<span data-avatar-fallback class="hidden w-full h-full items-center justify-center">' . $init . '</span>';
     }
@@ -207,7 +227,7 @@ function avatar_inner(?string $avatar, string $name, bool $lazy = true): string
 /**
  * Render a circular author/commenter avatar badge with initials fallback.
  */
-function avatar_badge(?string $avatar, string $name, string $sizeClasses = 'w-8 h-8 text-xs', string $extraClasses = '', bool $lazy = true): string
+function avatar_badge(?string $avatar, string $name, string $sizeClasses = 'w-8 h-8 text-xs', string $extraClasses = '', bool $lazy = false): string
 {
     $base = 'rounded-full bg-gradient-to-tr from-[#11151b] to-[#ff7b22] text-white inline-flex items-center justify-center font-bold shrink-0 overflow-hidden';
     $classes = trim($base . ' ' . $sizeClasses . ' ' . $extraClasses);
@@ -219,7 +239,7 @@ function avatar_badge(?string $avatar, string $name, string $sizeClasses = 'w-8 
  * Upload an image (data URI, remote URL, or binary) to Cloudinary if configured.
  * Supports CLOUDINARY_URL (cloudinary://api_key:api_secret@cloud_name) or discrete keys.
  */
-function upload_to_cloudinary(string $imageData): ?string
+function upload_to_cloudinary(string $imageData, string $folder = 'blogforge'): ?string
 {
     $cloudinaryUrl = envv('CLOUDINARY_URL');
     $cloudName = envv('CLOUDINARY_CLOUD_NAME');
@@ -240,7 +260,7 @@ function upload_to_cloudinary(string $imageData): ?string
     $timestamp = time();
     $params = [
         'timestamp' => $timestamp,
-        'folder' => 'blogforge',
+        'folder' => $folder,
     ];
 
     if ($apiSecret && $apiKey) {
@@ -923,6 +943,7 @@ function sample_posts(): array
 
 /**
  * Enrich post author blocks with live name, handle, and avatar from the users collection.
+ * Matches by both author ID (ObjectId) and author handle so avatars update across all posts.
  */
 function enrich_post_authors(array $posts, ?\MongoDB\Database $database = null): array
 {
@@ -936,32 +957,60 @@ function enrich_post_authors(array $posts, ?\MongoDB\Database $database = null):
     }
 
     $userOids = [];
+    $handles = [];
     foreach ($posts as $post) {
-        $uid = (string)($post['author']['id'] ?? '');
+        $author = is_array($post['author'] ?? null) ? $post['author'] : [];
+        $uid = (string)($author['id'] ?? '');
         if ($uid !== '' && ($uOid = oid($uid))) {
             $userOids[(string)$uOid] = $uOid;
         }
+        $h = ltrim(trim((string)($author['handle'] ?? '')), '@');
+        if ($h !== '') {
+            $handles[strtolower($h)] = $h;
+        }
     }
 
-    if (empty($userOids)) {
+    if (empty($userOids) && empty($handles)) {
         return $posts;
     }
 
     try {
+        $or = [];
+        if (!empty($userOids)) {
+            $or[] = ['_id' => ['$in' => array_values($userOids)]];
+        }
+        if (!empty($handles)) {
+            $or[] = ['handle' => ['$in' => array_values($handles)]];
+        }
+
+        $filter = count($or) === 1 ? $or[0] : ['$or' => $or];
         $uCursor = $database->users->find(
-            ['_id' => ['$in' => array_values($userOids)]],
+            $filter,
             ['projection' => ['name' => 1, 'handle' => 1, 'avatar' => 1]]
         );
         $usersById = [];
+        $usersByHandle = [];
         foreach ($uCursor as $uDoc) {
             $u = normalize_mongo($uDoc);
-            $usersById[(string)$u['_id']] = $u;
+            $uId = (string)($u['_id'] ?? '');
+            if ($uId !== '') {
+                $usersById[$uId] = $u;
+            }
+            $uHandle = strtolower(ltrim((string)($u['handle'] ?? ''), '@'));
+            if ($uHandle !== '') {
+                $usersByHandle[$uHandle] = $u;
+            }
         }
 
         foreach ($posts as &$post) {
+            if (!isset($post['author']) || !is_array($post['author'])) {
+                continue;
+            }
             $uid = (string)($post['author']['id'] ?? '');
-            if ($uid !== '' && isset($usersById[$uid])) {
-                $liveUser = $usersById[$uid];
+            $uHandle = strtolower(ltrim((string)($post['author']['handle'] ?? ''), '@'));
+
+            $liveUser = $usersById[$uid] ?? $usersByHandle[$uHandle] ?? null;
+            if ($liveUser) {
                 $post['author']['name'] = (string)($liveUser['name'] ?? $post['author']['name'] ?? 'Author');
                 $post['author']['handle'] = (string)($liveUser['handle'] ?? $post['author']['handle'] ?? '');
                 $post['author']['avatar'] = (string)($liveUser['avatar'] ?? $post['author']['avatar'] ?? '');
