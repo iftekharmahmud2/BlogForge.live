@@ -295,4 +295,89 @@ final class PostRepository
 
         return array_map('normalize_mongo', iterator_to_array($cursor, false));
     }
+
+    /**
+     * Toggle post status between published and draft.
+     */
+    public function toggleStatus(string $id, array $user): string
+    {
+        $db = Database::connection();
+        if (!$db) {
+            throw new \RuntimeException('Database is currently offline.');
+        }
+
+        $oid = oid($id);
+        if (!$oid) {
+            throw new \InvalidArgumentException('Invalid post ID format.');
+        }
+
+        $post = $db->posts->findOne(['_id' => $oid]);
+        if (!$post) {
+            throw new \RuntimeException('Post not found.');
+        }
+
+        $isAdmin = ($user['role'] ?? '') === 'admin';
+        $authorId = (string)($post['author']['id'] ?? '');
+
+        if (!$isAdmin && $authorId !== (string)$user['id']) {
+            throw new \RuntimeException('You do not have permission to modify this post status.');
+        }
+
+        $currentStatus = (string)($post['status'] ?? 'draft');
+        $newStatus = ($currentStatus === 'published') ? 'draft' : 'published';
+
+        $set = [
+            'status' => $newStatus,
+            'updated_at' => new UTCDateTime(),
+        ];
+
+        if ($newStatus === 'published' && empty($post['published_at'])) {
+            $set['published_at'] = new UTCDateTime();
+        }
+
+        $db->posts->updateOne(['_id' => $oid], ['$set' => $set]);
+
+        return $newStatus;
+    }
+
+    /**
+     * Admin: Toggle whether a post is featured.
+     */
+    public function toggleFeatured(string $id, array $user): bool
+    {
+        $db = Database::connection();
+        if (!$db) {
+            throw new \RuntimeException('Database is currently offline.');
+        }
+
+        $isAdmin = ($user['role'] ?? '') === 'admin';
+        if (!$isAdmin) {
+            throw new \RuntimeException('Only platform administrators can feature or unfeature stories.');
+        }
+
+        $oid = oid($id);
+        if (!$oid) {
+            throw new \InvalidArgumentException('Invalid post ID format.');
+        }
+
+        $post = $db->posts->findOne(['_id' => $oid]);
+        if (!$post) {
+            throw new \RuntimeException('Post not found.');
+        }
+
+        $currentFeatured = !empty($post['is_featured']);
+        $newFeatured = !$currentFeatured;
+
+        $db->posts->updateOne(
+            ['_id' => $oid],
+            [
+                '$set' => [
+                    'is_featured' => $newFeatured,
+                    'updated_at' => new UTCDateTime(),
+                ]
+            ]
+        );
+
+        return $newFeatured;
+    }
 }

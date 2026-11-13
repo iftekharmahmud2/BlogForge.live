@@ -95,3 +95,8 @@ if (PHP_SAPI !== 'cli' && !headers_sent() && session_status() !== PHP_SESSION_AC
 
 date_default_timezone_set('UTC');
 require_once __DIR__ . '/src/helpers.php';
+
+// Auto-synchronize session user, ID, and role if active
+if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user'])) {
+    current_user();
+}

@@ -131,4 +131,40 @@ final class CategoryRepository
         $res = $db->categories->deleteOne(['slug' => $slug]);
         return $res->getDeletedCount() > 0;
     }
+
+    /**
+     * Admin: Rename or update a category and its slug.
+     */
+    public function update(string $oldSlug, string $name, ?string $newSlug = null): void
+    {
+        $db = Database::connection();
+        if (!$db) {
+            throw new \RuntimeException('Database is currently offline.');
+        }
+
+        $oldSlug = trim($oldSlug);
+        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? $name);
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 50) {
+            throw new \RuntimeException('Category name must be between 2 and 50 characters.');
+        }
+
+        $newSlug = ($newSlug !== null && trim($newSlug) !== '') ? slugify($newSlug) : slugify($name);
+
+        $db->categories->updateOne(
+            ['slug' => $oldSlug],
+            [
+                '$set' => [
+                    'name' => $name,
+                    'slug' => $newSlug,
+                    'updated_at' => new UTCDateTime(),
+                ]
+            ]
+        );
+
+        // Also update any posts categorized under the old category name or slug
+        $db->posts->updateMany(
+            ['$or' => [['category' => $oldSlug], ['category_slug' => $oldSlug]]],
+            ['$set' => ['category' => $name, 'category_slug' => $newSlug]]
+        );
+    }
 }
