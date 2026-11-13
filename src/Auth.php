@@ -12,20 +12,85 @@ final class Auth
     /**
      * Authenticate user with email and password.
      */
-    public static function loginEmail(string $email, string $password): array
+    public const HANDLE_PATTERN = '/^[a-z0-9][a-z0-9_-]{2,29}$/';
+    public const RESERVED_HANDLES = [
+        'admin', 'administrator', 'root', 'system', 'blogforge',
+        'api', 'auth', 'login', 'register', 'logout',
+        'profile', 'drafts', 'write', 'explore', 'about',
+        'contact', 'faq', 'terms', 'privacy', 'cookies', 'help',
+        'null', 'undefined'
+    ];
+
+    public static function cleanHandle(string $handle): string
+    {
+        return ltrim(strtolower(trim($handle)), '@');
+    }
+
+    public static function assertHandle(string $handle): void
+    {
+        if ($handle === '') {
+            throw new \RuntimeException('Please choose a username.');
+        }
+        if (!preg_match(self::HANDLE_PATTERN, $handle)) {
+            throw new \RuntimeException('Username must be 3–30 characters: letters, numbers, dashes or underscores.');
+        }
+        if (in_array($handle, self::RESERVED_HANDLES, true)) {
+            throw new \RuntimeException('This username is reserved. Please choose another.');
+        }
+    }
+
+    public static function isHandleAvailable(string $handle, ?string $excludeUserId = null): bool
+    {
+        $handle = self::cleanHandle($handle);
+        try {
+            self::assertHandle($handle);
+        } catch (\RuntimeException) {
+            return false;
+        }
+
+        $db = Database::connection();
+        if (!$db) {
+            return false;
+        }
+
+        $filter = [
+            '$or' => [
+                ['handle' => $handle],
+                ['handle' => new \MongoDB\BSON\Regex('^' . preg_quote($handle, '/') . '$', 'i')],
+            ]
+        ];
+
+        if ($excludeUserId !== null && ($oid = oid($excludeUserId))) {
+            $filter = ['$and' => [$filter, ['_id' => ['$ne' => $oid]]]];
+        }
+
+        return $db->users->findOne($filter) === null;
+    }
+
+    public static function loginEmail(string $identifier, string $password): array
     {
         $db = self::requireDb();
 
-        $email = strtolower(trim($email));
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new \RuntimeException('Please provide a valid email address.');
+        $identifier = trim($identifier);
+        if ($identifier === '') {
+            throw new \RuntimeException('Please provide your email address or username.');
         }
 
         if ($password === '') {
             throw new \RuntimeException('Password cannot be empty.');
         }
 
-        $user = $db->users->findOne(['email' => $email]);
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $user = $db->users->findOne(['email' => strtolower($identifier)]);
+        } else {
+            $cleanHandle = self::cleanHandle($identifier);
+            $user = $db->users->findOne([
+                '$or' => [
+                    ['handle' => $cleanHandle],
+                    ['handle' => new \MongoDB\BSON\Regex('^' . preg_quote($cleanHandle, '/') . '$', 'i')],
+                ]
+            ]);
+        }
 
         // Account lockout check: block login if too many consecutive failures
         if ($user) {
@@ -89,16 +154,23 @@ final class Auth
         string $email,
         string $password,
         string $confirmPassword,
-        bool $acceptedTerms
+        bool $acceptedTerms,
+        string $handle = ''
     ): array {
         $db = self::requireDb();
 
         $firstName = self::cleanName($firstName);
         $lastName = self::cleanName($lastName);
         $email = strtolower(trim($email));
+        $handle = self::cleanHandle($handle);
 
         self::assertName($firstName, 'First name');
         self::assertName($lastName, 'Last name');
+
+        if ($handle === '') {
+            throw new \RuntimeException('Please choose a username.');
+        }
+        self::assertHandle($handle);
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new \RuntimeException('Please provide a valid email address.');
@@ -118,7 +190,9 @@ final class Auth
             throw new \RuntimeException('An account with this email address already exists.');
         }
 
-        $handle = self::uniqueHandle($db, slugify(strstr($email, '@', true) ?: ($firstName . $lastName)));
+        if (!self::isHandleAvailable($handle)) {
+            throw new \RuntimeException('That username is already taken. Please choose another.');
+        }
 
         $now = new UTCDateTime();
         $doc = [
@@ -136,8 +210,19 @@ final class Auth
             'updated_at' => $now,
         ];
 
-        $result = $db->users->insertOne($doc);
-        $doc['_id'] = $result->getInsertedId();
+        try {
+            $result = $db->users->insertOne($doc);
+            $doc['_id'] = $result->getInsertedId();
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, '11000') || str_contains($msg, 'duplicate key')) {
+                if (str_contains($msg, 'email')) {
+                    throw new \RuntimeException('An account with this email address already exists.');
+                }
+                throw new \RuntimeException('That username is already taken. Please choose another.');
+            }
+            throw $e;
+        }
 
         return self::startSession($doc);
     }
@@ -164,14 +249,10 @@ final class Auth
         self::assertName($firstName, 'First name');
         self::assertName($lastName, 'Last name');
 
-        $handle = strtolower(trim((string)($input['handle'] ?? '')));
-        $handle = ltrim($handle, '@');
-        if (!preg_match('/^[a-z0-9][a-z0-9_-]{2,29}$/', $handle)) {
-            throw new \RuntimeException('Username must be 3–30 characters: letters, numbers, dashes or underscores.');
-        }
-        if ($handle !== (string)($user['handle'] ?? '')
-            && $db->users->findOne(['handle' => $handle, '_id' => ['$ne' => $oid]])) {
-            throw new \RuntimeException('That username is already taken.');
+        $handle = self::cleanHandle((string)($input['handle'] ?? ''));
+        self::assertHandle($handle);
+        if ($handle !== (string)($user['handle'] ?? '') && !self::isHandleAvailable($handle, (string)$oid)) {
+            throw new \RuntimeException('That username is already taken. Please choose another.');
         }
 
         $bio = trim((string)($input['bio'] ?? ''));

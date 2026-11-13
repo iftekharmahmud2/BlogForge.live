@@ -37,11 +37,23 @@ require __DIR__ . '/partials/header.php';
                         <input class="w-full bg-white border border-[#e9e5df] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition shadow-sm" id="last_name" name="last_name" required maxlength="40" autocomplete="family-name" placeholder="Rivers">
                     </div>
                 </div>
+
+                <div>
+                    <label for="handle" class="block text-xs font-semibold text-gray-700 mb-1.5">Username</label>
+                    <div data-input-wrapper class="flex items-center border border-[#e9e5df] rounded-xl bg-white focus-within:border-[#ff9a3c] focus-within:ring-2 focus-within:ring-orange-100 transition shadow-sm overflow-hidden">
+                        <span class="pl-3.5 pr-1 text-gray-400 text-sm font-medium select-none">@</span>
+                        <input class="w-full bg-transparent border-0 outline-none px-2 py-2.5 text-sm" id="handle" name="handle" required minlength="3" maxlength="30" pattern="^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$" autocomplete="username" placeholder="alexrivers" autocapitalize="none" spellcheck="false">
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] mt-1 gap-2">
+                        <small class="text-gray-400">Letters, numbers, dashes, and underscores. 3–30 chars.</small>
+                        <span id="handle-feedback" class="hidden font-medium shrink-0"></span>
+                    </div>
+                </div>
             <?php endif; ?>
 
             <div>
-                <label for="email" class="block text-xs font-semibold text-gray-700 mb-1.5">Email address</label>
-                <input class="w-full bg-white border border-[#e9e5df] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition shadow-sm" id="email" type="email" name="email" required autocomplete="email" placeholder="alex@example.com">
+                <label for="email" class="block text-xs font-semibold text-gray-700 mb-1.5"><?= $register ? 'Email address' : 'Email address or username' ?></label>
+                <input class="w-full bg-white border border-[#e9e5df] rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#ff9a3c] focus:ring-2 focus:ring-orange-100 transition shadow-sm" id="email" type="<?= $register ? 'email' : 'text' ?>" name="email" required autocomplete="<?= $register ? 'email' : 'username' ?>" placeholder="<?= $register ? 'alex@example.com' : 'alex@example.com or @alexrivers' ?>">
             </div>
 
             <div>

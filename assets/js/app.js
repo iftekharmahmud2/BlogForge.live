@@ -749,7 +749,8 @@
         };
         const markInvalid = (el) => {
             if (el) {
-                el.classList.add('invalid', 'border-red-500', 'ring-2', 'ring-red-100');
+                const target = el.closest('[data-input-wrapper]') || el;
+                target.classList.add('invalid', 'border-red-500', 'ring-2', 'ring-red-100');
                 el.focus();
             }
         };
@@ -759,6 +760,46 @@
         // ----------------------------------------------------
         const authForm = $('[data-auth-form]');
         if (authForm) {
+            const handleInput = authForm.elements.handle || authForm.elements.username;
+            const handleFeedback = $('#handle-feedback', authForm);
+            if (handleInput && handleFeedback) {
+                let debounceTimer = null;
+                const checkHandle = async () => {
+                    const rawVal = handleInput.value.replace(/^@/, '').trim();
+                    if (!rawVal) {
+                        handleFeedback.className = 'hidden font-medium shrink-0';
+                        handleFeedback.textContent = '';
+                        return;
+                    }
+                    if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/.test(rawVal)) {
+                        handleFeedback.className = 'text-amber-600 font-medium shrink-0';
+                        handleFeedback.textContent = '3–30 chars: a-z, 0-9, _, -';
+                        return;
+                    }
+                    try {
+                        const res = await api(baseUrl + '/api/auth/email.php', {
+                            method: 'POST',
+                            body: { action: 'check_handle', handle: rawVal.toLowerCase() }
+                        });
+                        if (res.available) {
+                            handleFeedback.className = 'text-emerald-600 font-medium shrink-0';
+                            handleFeedback.textContent = '✓ Available';
+                        } else {
+                            handleFeedback.className = 'text-red-600 font-medium shrink-0';
+                            handleFeedback.textContent = '✗ Already taken';
+                        }
+                    } catch {
+                        // Ignore transient network errors during typing check
+                    }
+                };
+
+                handleInput.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(checkHandle, 350);
+                });
+                handleInput.addEventListener('blur', checkHandle);
+            }
+
             authForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const errBox = $('[data-auth-error]');
@@ -772,10 +813,24 @@
                 if (mode === 'register') {
                     if (!val('first_name')) { markInvalid(field('first_name')); return showError(errBox, 'Please enter your first name.'); }
                     if (!val('last_name')) { markInvalid(field('last_name')); return showError(errBox, 'Please enter your last name.'); }
+                    const hInput = field('handle') || field('username');
+                    const cleanH = (val('handle') || val('username')).replace(/^@/, '');
+                    if (!cleanH) {
+                        markInvalid(hInput);
+                        return showError(errBox, 'Please choose a username.');
+                    }
+                    if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/.test(cleanH)) {
+                        markInvalid(hInput);
+                        return showError(errBox, 'Username must be 3–30 characters: letters, numbers, dashes or underscores.');
+                    }
                 }
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) {
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email')) && (mode === 'register' || val('email').includes('@'))) {
                     markInvalid(field('email'));
                     return showError(errBox, 'Please enter a valid email address.');
+                }
+                if (mode !== 'register' && !val('email')) {
+                    markInvalid(field('email'));
+                    return showError(errBox, 'Please enter your email or username.');
                 }
                 if (mode === 'register') {
                     const pw = field('password').value;
@@ -791,6 +846,9 @@
                 const payload = Object.fromEntries(fd.entries());
                 payload.action = mode;
                 payload.terms = Boolean(field('terms')?.checked);
+                if (payload.handle) {
+                    payload.handle = String(payload.handle).replace(/^@/, '').trim().toLowerCase();
+                }
 
                 const submitBtn = $('button[type=submit]', authForm);
                 if (submitBtn) submitBtn.disabled = true;
