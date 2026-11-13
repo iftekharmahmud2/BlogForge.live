@@ -620,6 +620,9 @@ function require_admin(): void
  */
 function oid(mixed $id): ?ObjectId
 {
+    if ($id instanceof ObjectId) {
+        return $id;
+    }
     if (!is_string($id)) {
         return null;
     }

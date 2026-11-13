@@ -11,6 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_response(['error' => 'Method not allowed.'], 405);
 }
 
+// Strict server-side Admin Guard
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+    json_response(['error' => 'Forbidden: administrator access required'], 403);
+}
+
 require_admin();
 verify_csrf();
 check_rate_limit('admin_comment', 60, 60);
@@ -23,6 +28,13 @@ if (empty($d)) {
 $id = trim((string)($d['id'] ?? ''));
 if ($id === '') {
     json_response(['error' => 'Missing comment ID.'], 400);
+}
+
+// Validate ObjectId
+try {
+    new MongoDB\BSON\ObjectId($id);
+} catch (\Throwable) {
+    json_response(['error' => 'Invalid comment ID format.'], 422);
 }
 
 $repo = new CommentRepository();

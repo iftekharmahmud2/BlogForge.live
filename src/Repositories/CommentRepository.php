@@ -38,7 +38,7 @@ final class CommentRepository
                 'handle' => (string)($user['handle'] ?? ''),
                 'avatar' => (string)($user['avatar'] ?? ''),
             ],
-            'status' => 'approved',
+            'status' => function_exists('get_setting') ? (string)get_setting('comments_policy', 'approved') : 'approved',
             'created_at' => new UTCDateTime(),
             'updated_at' => new UTCDateTime(),
         ];
