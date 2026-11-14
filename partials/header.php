@@ -49,6 +49,21 @@ $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php');
     </script>
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col bg-[#fffdfa] text-[#11151b]">
+<?php if (is_admin() && (string)get_setting('maintenance_mode', '0') === '1'): ?>
+    <!-- Admin-only Maintenance Mode Notification Banner -->
+    <aside class="bg-gradient-to-r from-amber-500 to-amber-600 text-black text-xs font-semibold px-4 py-2 border-b border-amber-600/30 relative z-50 shadow-sm" role="status" aria-live="polite">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 shrink-0 text-amber-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span><strong>Maintenance Mode Active:</strong> Public visitors see the under-maintenance screen. Admins retain full access.</span>
+            </div>
+            <a href="<?= e(app_url('admin/settings.php')) ?>" class="inline-flex items-center gap-1 font-bold text-amber-950 hover:text-white transition underline underline-offset-2">
+                <span>Manage in Settings</span>
+                <span aria-hidden="true">&rarr;</span>
+            </a>
+        </div>
+    </aside>
+<?php endif; ?>
 <header class="sticky top-0 z-50 bg-[#fffdfa]/90 backdrop-blur-md border-b border-[#e9e5df]/80 text-[#11151b] transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         <!-- Brand Logo & Name -->

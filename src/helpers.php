@@ -592,6 +592,9 @@ function is_logged_in(): bool
 
 function is_admin(): bool
 {
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+        return true;
+    }
     $u = current_user();
     return is_array($u) && ($u['role'] ?? '') === 'admin';
 }

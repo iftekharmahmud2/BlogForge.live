@@ -32,6 +32,8 @@ $siteTitle = (string)get_setting('site_title', 'BlogForge');
             <span>&copy; <?= date('Y') ?> <?= e($siteTitle) ?></span>
             <span>&bull;</span>
             <a href="mailto:support@blogforge.live" class="hover:text-gray-600 transition">Contact Support</a>
+            <span>&bull;</span>
+            <a href="<?= e(app_url('auth.php')) ?>" class="hover:text-gray-600 transition font-medium">Admin Sign In</a>
         </div>
     </div>
 </body>

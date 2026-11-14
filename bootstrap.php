@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 
+if (defined('BLOGFORGE_BOOTSTRAPPED')) {
+    return;
+}
+define('BLOGFORGE_BOOTSTRAPPED', true);
+
 // Autoload dependencies or register PSR-4 fallback autoloader
 $autoload = __DIR__ . '/vendor/autoload.php';
 if (file_exists($autoload)) {
@@ -99,4 +104,71 @@ require_once __DIR__ . '/src/helpers.php';
 // Auto-synchronize session user, ID, and role if active
 if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user'])) {
     current_user();
+}
+
+// Global Maintenance Mode Guard
+if (PHP_SAPI !== 'cli') {
+    $isExempt = false;
+
+    $exemptPrefixes = [
+        '/admin/',
+        '/api/admin/',
+        '/api/auth/',
+        '/api/health',
+        '/assets/',
+        '/uploads/',
+    ];
+
+    $exemptFiles = [
+        'maintenance.php',
+        'auth.php',
+    ];
+
+    $scriptBase = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $scriptFile = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME'] ?? '');
+    $rootDir = str_replace('\\', '/', __DIR__);
+    $relFile = str_starts_with($scriptFile, $rootDir) ? substr($scriptFile, strlen($rootDir)) : '';
+
+    $uri = $_SERVER['REQUEST_URI'] ?? '/';
+    $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+
+    if (in_array($scriptBase, $exemptFiles, true)) {
+        $isExempt = true;
+    }
+
+    if (!$isExempt) {
+        foreach ($exemptPrefixes as $prefix) {
+            if (str_starts_with($relFile, $prefix) || str_contains($path, $prefix)) {
+                $isExempt = true;
+                break;
+            }
+        }
+    }
+
+    if (!$isExempt && (str_contains($path, 'auth.php') || str_contains($path, 'maintenance.php'))) {
+        $isExempt = true;
+    }
+
+    if (!$isExempt) {
+        $isMaintenance = ((string)get_setting('maintenance_mode', '0')) === '1';
+        if ($isMaintenance && !is_admin()) {
+            http_response_code(503);
+            header('Retry-After: 300');
+
+            $isApi = str_starts_with($path, '/api/') ||
+                     str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+
+            if ($isApi) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode([
+                    'error' => 'Site is currently undergoing maintenance. Please check back shortly.',
+                    'maintenance' => true,
+                ], JSON_UNESCAPED_SLASHES);
+                exit;
+            }
+
+            require __DIR__ . '/maintenance.php';
+            exit;
+        }
+    }
 }
