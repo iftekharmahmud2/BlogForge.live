@@ -110,14 +110,14 @@ $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php');
                 <a class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white text-xs font-semibold px-4 py-2 shadow-sm hover:shadow-md hover:brightness-105 transition" href="<?= e(app_url('auth.php?mode=register')) ?>">Get started</a>
             <?php endif; ?>
 
-            <!-- Mobile-Only Hamburger Button (Strictly HIDDEN on desktop via md:hidden) -->
-            <div class="relative md:hidden">
+            <!-- Navigation Menu Toggle Button (Visible on both Web View and Mobile) -->
+            <div class="relative">
                 <button id="mobile-toggle" class="w-9 h-9 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-orange-50 hover:text-[#ff6b13] flex items-center justify-center transition shadow-sm cursor-pointer focus:outline-none" data-mobile-toggle aria-label="Open Navigation Menu" aria-expanded="false" type="button">
                     <svg id="hamburger-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     <svg id="close-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
 
-                <!-- Mobile Dropdown Menu -->
+                <!-- Navigation Dropdown Menu -->
                 <div id="mobile-menu" class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-100 text-gray-700 rounded-2xl shadow-xl p-2 z-50 text-sm flex-col gap-1" data-mobile-nav>
                     <a href="<?= e(app_url()) ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:bg-orange-50 hover:text-[#ff6b13] transition font-medium">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 12 2-2m0 0 7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11 2 2m-2-2v10a1 1 0 0 1-1 1h-3m-6 0a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1m-6 0h6"/></svg>
@@ -153,6 +153,29 @@ $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php');
                             <a href="<?= e(app_url('profile.php')) ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:bg-orange-50 hover:text-[#ff6b13] transition font-medium">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                 <span>Profile &amp; stories</span>
+                            </a>
+                            <a href="<?= e(app_url('profile-edit.php')) ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:bg-orange-50 hover:text-[#ff6b13] transition font-medium">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span>Edit profile</span>
+                            </a>
+                            <?php if (is_admin()): ?>
+                                <a href="<?= e(app_url('admin/')) ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-orange-600 hover:bg-orange-50 transition font-medium">
+                                    <svg class="w-4 h-4 text-[#ff6b13]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    <span>Admin dashboard</span>
+                                </a>
+                            <?php endif; ?>
+                            <a href="<?= e(app_url('api/auth/logout.php')) ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 mt-1 border-t border-gray-100 transition font-medium">
+                                <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                <span>Sign out</span>
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="border-t border-gray-100 mt-1 pt-1">
+                            <a href="<?= e(app_url('auth.php')) ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:bg-orange-50 hover:text-[#ff6b13] transition font-medium">
+                                <span>Sign in</span>
+                            </a>
+                            <a href="<?= e(app_url('auth.php?mode=register')) ?>" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#ff6b13] font-semibold hover:bg-orange-50 transition">
+                                <span>Get started</span>
                             </a>
                         </div>
                     <?php endif; ?>
