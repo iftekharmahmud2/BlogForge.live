@@ -768,7 +768,7 @@
         };
 
         // ----------------------------------------------------
-        // 8.5 Date of Birth Helper & Picker (DD/MM/YY)
+        // 8.5 Date of Birth Helper & Interactive Calendar Popover
         // ----------------------------------------------------
         const parseDob = (str) => {
             if (!str || typeof str !== 'string') return null;
@@ -801,8 +801,9 @@
             const daysInMonth = new Date(fullYear, month, 0).getDate();
             if (day > daysInMonth) return null;
 
+            const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
             const dateObj = new Date(fullYear, month - 1, day);
-            if (dateObj > now) return null;
+            if (dateObj > todayEnd) return null;
 
             const ddStr = String(day).padStart(2, '0');
             const mmStr = String(month).padStart(2, '0');
@@ -826,45 +827,293 @@
 
             wrappers.forEach((wrapper) => {
                 const input = $('[data-dob-input]', wrapper);
-                const nativeInput = $('[data-dob-native]', wrapper);
                 const calBtn = $('[data-dob-cal-btn]', wrapper) || $('[data-dob-cal-wrapper]', wrapper);
+                const nativeInput = $('[data-dob-native]', wrapper);
 
-                if (!input) return;
+                if (!input || !calBtn) return;
 
-                const syncToNative = () => {
-                    if (!nativeInput || !input.value) return;
-                    const parsed = parseDob(input.value);
-                    if (parsed && parsed.iso) {
-                        nativeInput.value = parsed.iso;
-                    }
-                };
+                // Create the interactive calendar popover element if not present
+                let popover = $('[data-dob-popover]', wrapper);
+                if (!popover) {
+                    popover = document.createElement('div');
+                    popover.setAttribute('data-dob-popover', '');
+                    popover.className = 'hidden absolute top-full right-0 mt-2 w-[285px] sm:w-[315px] max-w-[calc(100vw-32px)] bg-white border border-[#e9e5df] rounded-2xl shadow-[0_22px_50px_-10px_rgba(0,0,0,0.22)] p-3.5 sm:p-4 z-50 text-gray-800 select-none animate-in fade-in duration-150';
+                    popover.innerHTML = `
+                        <!-- Calendar Header: Month/Year Dropdowns & Prev/Next Arrows -->
+                        <div class="flex items-center justify-between gap-1 pb-3 border-b border-gray-100">
+                            <button type="button" data-cal-prev class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-orange-50 hover:text-[#ff6b13] text-gray-500 transition cursor-pointer" title="Previous month" aria-label="Previous month">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                            </button>
+                            <div class="flex items-center gap-1.5 flex-1 justify-center">
+                                <select data-cal-month class="bg-gray-50 hover:bg-gray-100 text-gray-800 text-xs font-semibold py-1.5 px-2 rounded-lg border border-gray-200 outline-none cursor-pointer transition">
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5">June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8">September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                                <select data-cal-year class="bg-gray-50 hover:bg-gray-100 text-gray-800 text-xs font-semibold py-1.5 px-2 rounded-lg border border-gray-200 outline-none cursor-pointer transition">
+                                </select>
+                            </div>
+                            <button type="button" data-cal-next class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-orange-50 hover:text-[#ff6b13] text-gray-500 transition cursor-pointer" title="Next month" aria-label="Next month">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                            </button>
+                        </div>
 
-                // Calendar opener
-                const openCalendar = () => {
-                    if (!nativeInput) return;
-                    syncToNative();
-                    if (typeof nativeInput.showPicker === 'function') {
-                        try {
-                            nativeInput.showPicker();
-                            return;
-                        } catch {
-                            // fallback
-                        }
-                    }
-                    nativeInput.focus();
-                    try {
-                        nativeInput.click();
-                    } catch {}
-                };
+                        <!-- Days of Week Header -->
+                        <div class="grid grid-cols-7 gap-1 text-center py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                            <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+                        </div>
 
-                if (calBtn) {
-                    calBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        openCalendar();
-                    });
+                        <!-- Days Grid -->
+                        <div data-cal-days class="grid grid-cols-7 gap-1 text-center text-xs"></div>
+
+                        <!-- Footer Quick Actions -->
+                        <div class="flex items-center justify-between pt-3 mt-2 border-t border-gray-100 text-xs">
+                            <button type="button" data-cal-clear class="text-gray-400 hover:text-red-500 font-medium transition cursor-pointer px-1.5 py-0.5 rounded">Clear</button>
+                            <button type="button" data-cal-today class="text-[#ff6b13] hover:text-[#e05807] font-semibold transition cursor-pointer px-1.5 py-0.5 rounded">Today</button>
+                            <button type="button" data-cal-close class="text-gray-500 hover:text-gray-800 font-medium transition cursor-pointer px-1.5 py-0.5 rounded">Close</button>
+                        </div>
+                    `;
+                    wrapper.appendChild(popover);
                 }
 
-                // If native calendar value changes, convert YYYY-MM-DD -> DD/MM/YYYY
+                const monthSelect = $('[data-cal-month]', popover);
+                const yearSelect = $('[data-cal-year]', popover);
+                const daysGrid = $('[data-cal-days]', popover);
+                const prevBtn = $('[data-cal-prev]', popover);
+                const nextBtn = $('[data-cal-next]', popover);
+                const clearBtn = $('[data-cal-clear]', popover);
+                const todayBtn = $('[data-cal-today]', popover);
+                const closeBtn = $('[data-cal-close]', popover);
+
+                // Populate Year selector (currentYear down to 1920)
+                const currentYear = (new Date()).getFullYear();
+                const minYear = 1920;
+                let yearsOptions = '';
+                for (let y = currentYear; y >= minYear; y--) {
+                    yearsOptions += `<option value="${y}">${y}</option>`;
+                }
+                yearSelect.innerHTML = yearsOptions;
+
+                // Calendar internal view state
+                let viewYear = 2000;
+                let viewMonth = 0;
+                let selected = null; // { year, month: 1-12, day: 1-31 }
+
+                const renderDays = () => {
+                    monthSelect.value = String(viewMonth);
+                    yearSelect.value = String(viewYear);
+
+                    const now = new Date();
+                    const todayYear = now.getFullYear();
+                    const todayMonth = now.getMonth();
+                    const todayDate = now.getDate();
+
+                    // Monday-based indexing: (day + 6) % 7
+                    const firstDayIndex = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
+                    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+                    const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+                    let html = '';
+
+                    // Trailing days from previous month
+                    for (let i = firstDayIndex - 1; i >= 0; i--) {
+                        const prevD = daysInPrevMonth - i;
+                        html += `<span class="h-8 flex items-center justify-center text-gray-300 pointer-events-none">${prevD}</span>`;
+                    }
+
+                    // Days in current month
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const isToday = (viewYear === todayYear && viewMonth === todayMonth && d === todayDate);
+                        const dayDate = new Date(viewYear, viewMonth, d, 23, 59, 59);
+                        const isFuture = (dayDate > now);
+                        const isSelected = (selected && selected.year === viewYear && selected.month === (viewMonth + 1) && selected.day === d);
+
+                        if (isFuture) {
+                            html += `<span class="h-8 flex items-center justify-center text-gray-300 opacity-40 cursor-not-allowed">${d}</span>`;
+                        } else if (isSelected) {
+                            html += `<button type="button" data-cal-day="${d}" class="h-8 flex items-center justify-center rounded-lg bg-[#ff6b13] text-white font-bold shadow-sm cursor-pointer hover:bg-[#e05807] transition">${d}</button>`;
+                        } else {
+                            const todayClass = isToday ? 'ring-1 ring-[#ff6b13] text-[#ff6b13] font-bold' : 'text-gray-700';
+                            html += `<button type="button" data-cal-day="${d}" class="h-8 flex items-center justify-center rounded-lg hover:bg-orange-50 hover:text-[#ff6b13] font-medium transition cursor-pointer ${todayClass}">${d}</button>`;
+                        }
+                    }
+
+                    // Trailing days to complete the 7-column grid
+                    const totalSlots = Math.ceil((firstDayIndex + daysInMonth) / 7) * 7;
+                    const trailingCount = totalSlots - (firstDayIndex + daysInMonth);
+                    for (let t = 1; t <= trailingCount; t++) {
+                        html += `<span class="h-8 flex items-center justify-center text-gray-300 pointer-events-none">${t}</span>`;
+                    }
+
+                    daysGrid.innerHTML = html;
+                };
+
+                const closePopover = () => {
+                    popover.classList.add('hidden');
+                    calBtn.classList.remove('text-[#ff6b13]');
+                };
+
+                const openPopover = () => {
+                    // Close any other open DOB popovers on the page
+                    $$('[data-dob-popover]').forEach(p => {
+                        if (p !== popover) p.classList.add('hidden');
+                    });
+                    $$('[data-dob-cal-btn]').forEach(b => {
+                        if (b !== calBtn) b.classList.remove('text-[#ff6b13]');
+                    });
+
+                    const parsed = parseDob(input.value);
+                    if (parsed) {
+                        viewYear = parsed.year;
+                        viewMonth = parsed.month - 1;
+                        selected = { year: parsed.year, month: parsed.month, day: parsed.day };
+                    } else {
+                        selected = null;
+                        // Default to year 2000 (age ~26) for fast DOB selection
+                        viewYear = Math.max(minYear, currentYear - 20);
+                        viewMonth = (new Date()).getMonth();
+                    }
+
+                    renderDays();
+                    popover.classList.remove('hidden');
+                    calBtn.classList.add('text-[#ff6b13]');
+                };
+
+                const setDateValue = (d, m, y) => {
+                    const ddStr = String(d).padStart(2, '0');
+                    const mmStr = String(m).padStart(2, '0');
+                    const yyyyStr = String(y);
+
+                    input.value = `${ddStr}/${mmStr}/${yyyyStr}`;
+                    if (nativeInput) nativeInput.value = `${yyyyStr}-${mmStr}-${ddStr}`;
+                    selected = { year: y, month: m, day: d };
+
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    closePopover();
+                    input.focus();
+                };
+
+                // Day click
+                daysGrid.addEventListener('click', (e) => {
+                    const dayBtn = e.target.closest('[data-cal-day]');
+                    if (!dayBtn) return;
+                    e.preventDefault();
+                    const d = parseInt(dayBtn.getAttribute('data-cal-day'), 10);
+                    setDateValue(d, viewMonth + 1, viewYear);
+                });
+
+                // Month dropdown change
+                monthSelect.addEventListener('change', () => {
+                    viewMonth = parseInt(monthSelect.value, 10);
+                    renderDays();
+                });
+
+                // Year dropdown change
+                yearSelect.addEventListener('change', () => {
+                    viewYear = parseInt(yearSelect.value, 10);
+                    renderDays();
+                });
+
+                // Previous month button
+                prevBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    viewMonth--;
+                    if (viewMonth < 0) {
+                        viewMonth = 11;
+                        viewYear--;
+                        if (viewYear < minYear) {
+                            viewYear = minYear;
+                            viewMonth = 0;
+                        }
+                    }
+                    renderDays();
+                });
+
+                // Next month button
+                nextBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const now = new Date();
+                    if (viewYear >= now.getFullYear() && viewMonth >= now.getMonth()) {
+                        return; // Cannot navigate past current month in current year
+                    }
+                    viewMonth++;
+                    if (viewMonth > 11) {
+                        viewMonth = 0;
+                        viewYear++;
+                        if (viewYear > currentYear) {
+                            viewYear = currentYear;
+                            viewMonth = 11;
+                        }
+                    }
+                    renderDays();
+                });
+
+                // Clear button
+                clearBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    input.value = '';
+                    if (nativeInput) nativeInput.value = '';
+                    selected = null;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    closePopover();
+                    input.focus();
+                });
+
+                // Today button
+                todayBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const now = new Date();
+                    setDateValue(now.getDate(), now.getMonth() + 1, now.getFullYear());
+                });
+
+                // Close button
+                closeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    closePopover();
+                });
+
+                // Toggle calendar popover on calBtn click
+                calBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (popover.classList.contains('hidden')) {
+                        openPopover();
+                    } else {
+                        closePopover();
+                    }
+                });
+
+                // Prevent click inside popover from closing it
+                popover.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+
+                // Close on click outside
+                document.addEventListener('click', (e) => {
+                    if (!wrapper.contains(e.target)) {
+                        closePopover();
+                    }
+                });
+
+                // Close on Escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && !popover.classList.contains('hidden')) {
+                        closePopover();
+                    }
+                });
+
+                // Native input change listener (if ever triggered by browser auto-fill)
                 if (nativeInput) {
                     nativeInput.addEventListener('change', () => {
                         if (!nativeInput.value) return;
@@ -924,8 +1173,16 @@
                     }
 
                     const parsed = parseDob(v);
-                    if (parsed && nativeInput) {
-                        nativeInput.value = parsed.iso;
+                    if (parsed) {
+                        selected = { year: parsed.year, month: parsed.month, day: parsed.day };
+                        if (nativeInput) nativeInput.value = parsed.iso;
+                        if (!popover.classList.contains('hidden')) {
+                            viewYear = parsed.year;
+                            viewMonth = parsed.month - 1;
+                            renderDays();
+                        }
+                    } else {
+                        selected = null;
                     }
                 });
 
