@@ -36,3 +36,4 @@ $siteTitle = (string)get_setting('site_title', 'BlogForge');
     </div>
 </body>
 </html>
+

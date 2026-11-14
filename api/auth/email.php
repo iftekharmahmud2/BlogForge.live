@@ -24,7 +24,10 @@ try {
     if ($action === 'check_handle') {
         check_rate_limit('check_handle', 60, 60);
         $handle = trim((string)($d['handle'] ?? $d['username'] ?? ''));
-        $available = Auth::isHandleAvailable($handle);
+        $currentUser = current_user();
+        $excludeUserId = $currentUser ? (string)($currentUser['id'] ?? '') : null;
+        $isAdmin = is_admin();
+        $available = Auth::isHandleAvailable($handle, $excludeUserId, $isAdmin);
         json_response([
             'ok' => true,
             'handle' => Auth::cleanHandle($handle),

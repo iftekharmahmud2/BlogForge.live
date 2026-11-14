@@ -1202,7 +1202,8 @@
 
                 if (!String(payload.first_name || '').trim()) { markInvalid(profileForm.elements.first_name); return showError(errBox, 'First name is required.'); }
                 if (!String(payload.last_name || '').trim()) { markInvalid(profileForm.elements.last_name); return showError(errBox, 'Last name is required.'); }
-                if (!/^@?[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/.test(String(payload.handle || '').trim())) {
+                payload.handle = String(payload.handle || '').replace(/^@+/, '').trim().toLowerCase();
+                if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/.test(payload.handle)) {
                     markInvalid(profileForm.elements.handle);
                     return showError(errBox, 'Username must be 3–30 characters: letters, numbers, dashes or underscores.');
                 }

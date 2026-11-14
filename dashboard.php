@@ -10,3 +10,4 @@ if (is_admin()) {
 } else {
     redirect(app_url('drafts.php'));
 }
+

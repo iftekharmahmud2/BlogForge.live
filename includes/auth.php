@@ -57,3 +57,4 @@ function auth_logout(): void
     }
     session_destroy();
 }
+

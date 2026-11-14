@@ -49,3 +49,4 @@ function get_db_connection()
     }
     return pdo_db();
 }
+

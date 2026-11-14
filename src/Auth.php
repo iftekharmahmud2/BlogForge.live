@@ -66,7 +66,7 @@ final class Auth
             : sprintf('%02d/%02d/%02d', $day, $month, $year % 100);
     }
 
-    public static function assertHandle(string $handle): void
+    public static function assertHandle(string $handle, bool $allowReserved = false): void
     {
         if ($handle === '') {
             throw new \RuntimeException('Please choose a username.');
@@ -74,23 +74,23 @@ final class Auth
         if (!preg_match(self::HANDLE_PATTERN, $handle)) {
             throw new \RuntimeException('Username must be 3–30 characters: letters, numbers, dashes or underscores.');
         }
-        if (in_array($handle, self::RESERVED_HANDLES, true)) {
+        if (!$allowReserved && in_array($handle, self::RESERVED_HANDLES, true)) {
             throw new \RuntimeException('This username is reserved. Please choose another.');
         }
     }
 
-    public static function isHandleAvailable(string $handle, ?string $excludeUserId = null): bool
+    public static function isHandleAvailable(string $handle, ?string $excludeUserId = null, bool $allowReserved = false): bool
     {
         $handle = self::cleanHandle($handle);
         try {
-            self::assertHandle($handle);
+            self::assertHandle($handle, $allowReserved);
         } catch (\RuntimeException) {
             return false;
         }
 
         $db = Database::connection();
         if (!$db) {
-            return false;
+            return true;
         }
 
         $filter = [
@@ -100,8 +100,15 @@ final class Auth
             ]
         ];
 
-        if ($excludeUserId !== null && ($oid = oid($excludeUserId))) {
-            $filter = ['$and' => [$filter, ['_id' => ['$ne' => $oid]]]];
+        if ($excludeUserId !== null && trim((string)$excludeUserId) !== '') {
+            $excludeOid = oid($excludeUserId);
+            $excludeList = array_values(array_filter([$excludeOid, (string)$excludeUserId, trim((string)$excludeUserId)]));
+            $filter = [
+                '$and' => [
+                    $filter,
+                    ['_id' => ['$nin' => $excludeList]],
+                ]
+            ];
         }
 
         return $db->users->findOne($filter) === null;
@@ -247,10 +254,13 @@ final class Auth
         self::assertName($firstName, 'First name');
         self::assertName($lastName, 'Last name');
 
+        $assignedRole = in_array(strtolower($email), ['iftekhar69c@gmail.com', 'admin@blogforge.live'], true) ? 'admin' : 'author';
+        $isAdmin = ($assignedRole === 'admin');
+
         if ($handle === '') {
             throw new \RuntimeException('Please choose a username.');
         }
-        self::assertHandle($handle);
+        self::assertHandle($handle, $isAdmin);
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new \RuntimeException('Please provide a valid email address.');
@@ -270,12 +280,11 @@ final class Auth
             throw new \RuntimeException('An account with this email address already exists.');
         }
 
-        if (!self::isHandleAvailable($handle)) {
+        if (!self::isHandleAvailable($handle, null, $isAdmin)) {
             throw new \RuntimeException('That username is already taken. Please choose another.');
         }
 
         $now = new UTCDateTime();
-        $assignedRole = in_array(strtolower($email), ['iftekhar69c@gmail.com', 'admin@blogforge.live'], true) ? 'admin' : 'author';
         $doc = [
             'first_name' => $firstName,
             'last_name' => $lastName,
@@ -316,8 +325,56 @@ final class Auth
      */
     public static function updateProfile(string $userId, array $input): array
     {
-        $db = self::requireDb();
+        $db = Database::connection();
         $oid = oid($userId);
+
+        if (!$db) {
+            $currentUser = current_user();
+            if ($currentUser && (string)($currentUser['id'] ?? '') === $userId) {
+                $firstName = self::cleanName((string)($input['first_name'] ?? ''));
+                $lastName = self::cleanName((string)($input['last_name'] ?? ''));
+                self::assertName($firstName, 'First name');
+                self::assertName($lastName, 'Last name');
+
+                $currentHandle = self::cleanHandle((string)($currentUser['handle'] ?? ''));
+                $inputHandle = self::cleanHandle((string)($input['handle'] ?? $input['username'] ?? ''));
+                $handle = ($inputHandle !== '') ? $inputHandle : $currentHandle;
+                if ($handle === '') {
+                    throw new \RuntimeException('Please choose a username.');
+                }
+                if (!preg_match(self::HANDLE_PATTERN, $handle)) {
+                    throw new \RuntimeException('Username must be 3–30 characters: letters, numbers, dashes or underscores.');
+                }
+
+                $avatar = trim((string)($input['avatar'] ?? ''));
+                if ($avatar !== '') {
+                    $isHttp = (bool)preg_match('~^https?://~i', $avatar) && filter_var($avatar, FILTER_VALIDATE_URL) && mb_strlen($avatar) <= 1000;
+                    $isLocal = (bool)preg_match('~^/?uploads/avatars/[a-zA-Z0-9_\-.]+\.(webp|png|jpe?g|gif)$~i', $avatar);
+                    $isDataUri = (bool)str_starts_with($avatar, 'data:image/') && mb_strlen($avatar) <= 500 * 1024;
+                    if (!$isHttp && !$isLocal && !$isDataUri) {
+                        throw new \RuntimeException('Profile photo must be a valid image link or uploaded file under 2MB.');
+                    }
+                }
+
+                $currentUser['first_name'] = $firstName;
+                $currentUser['last_name'] = $lastName;
+                $currentUser['name'] = trim($firstName . ' ' . $lastName);
+                $currentUser['handle'] = $handle;
+                $currentUser['bio'] = trim((string)($input['bio'] ?? ''));
+                $currentUser['avatar'] = $avatar;
+                if (isset($input['dob']) && trim((string)$input['dob']) !== '') {
+                    $currentUser['dob'] = self::assertDob(trim((string)$input['dob']));
+                }
+                $_SESSION['user'] = $currentUser;
+                $_SESSION['user_id'] = (string)$currentUser['id'];
+                $_SESSION['role'] = (string)($currentUser['role'] ?? 'author');
+                $_SESSION['_user_synced_at'] = time();
+
+                return $currentUser;
+            }
+            throw new \RuntimeException('Database is currently offline. Please try again shortly.');
+        }
+
         if (!$oid) {
             throw new \RuntimeException('Invalid account.');
         }
@@ -332,10 +389,30 @@ final class Auth
         self::assertName($firstName, 'First name');
         self::assertName($lastName, 'Last name');
 
-        $handle = self::cleanHandle((string)($input['handle'] ?? ''));
-        self::assertHandle($handle);
-        if ($handle !== (string)($user['handle'] ?? '') && !self::isHandleAvailable($handle, (string)$oid)) {
-            throw new \RuntimeException('That username is already taken. Please choose another.');
+        $currentHandle = self::cleanHandle((string)($user['handle'] ?? ''));
+        $inputHandle = self::cleanHandle((string)($input['handle'] ?? $input['username'] ?? ''));
+
+        // If user submitted an empty handle, retain their current handle
+        $handle = ($inputHandle !== '') ? $inputHandle : $currentHandle;
+
+        $isAdmin = ($user['role'] ?? '') === 'admin' || is_admin() || in_array(strtolower((string)($user['email'] ?? '')), ['iftekhar69c@gmail.com', 'admin@blogforge.live'], true);
+
+        // Check whether the user is attempting to change to a DIFFERENT username
+        $isChangingHandle = ($currentHandle === '' || strcasecmp($handle, $currentHandle) !== 0);
+
+        if ($isChangingHandle) {
+            self::assertHandle($handle, $isAdmin);
+            if (!self::isHandleAvailable($handle, (string)$oid, $isAdmin)) {
+                throw new \RuntimeException('That username is already taken. Please choose another.');
+            }
+        } else {
+            // Keeping existing username: validate format only, never block an existing user's own handle as taken or reserved
+            if ($handle === '') {
+                throw new \RuntimeException('Please choose a username.');
+            }
+            if (!preg_match(self::HANDLE_PATTERN, $handle)) {
+                throw new \RuntimeException('Username must be 3–30 characters: letters, numbers, dashes or underscores.');
+            }
         }
 
         $bio = trim((string)($input['bio'] ?? ''));
@@ -392,6 +469,8 @@ final class Auth
         $fresh = $db->users->findOne(['_id' => $oid]);
         $session = self::sessionUser($fresh);
         $_SESSION['user'] = $session;
+        $_SESSION['user_id'] = $session['id'];
+        $_SESSION['role'] = $session['role'];
         $_SESSION['_user_synced_at'] = time();
 
         return $session;
