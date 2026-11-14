@@ -59,7 +59,7 @@ require __DIR__ . '/partials/header.php';
                         </button>
                         <input type="date" data-dob-native class="absolute right-0 top-0 w-11 h-full opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" max="<?= date('Y-m-d') ?>" min="1920-01-01">
                     </div>
-                    <small class="block text-[11px] text-gray-400 mt-1">Format: DD/MM/YYYY or DD/MM/YY (type numbers or click calendar icon)</small>
+                    <small class="block text-[11px] text-gray-400 mt-1">Format: DD/MM/YYYY · Private &amp; never shown publicly on your profile.</small>
                 </div>
             <?php endif; ?>
 
