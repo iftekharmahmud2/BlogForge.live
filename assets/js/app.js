@@ -821,6 +821,79 @@
             };
         };
 
+        // Helper: format and strictly clamp typed DOB (dd: 1-31, mm: 1-12, yyyy: up to 4 digits)
+        const formatDobInput = (val) => {
+            if (!val) return '';
+            let s = String(val).replace(/[-.]/g, '/').replace(/[^\d/]/g, '').replace(/\/+/g, '/');
+
+            let rawParts = s.split('/');
+            let d = rawParts[0] ? rawParts[0].replace(/\D/g, '') : '';
+            let m = rawParts[1] !== undefined ? rawParts[1].replace(/\D/g, '') : null;
+            let y = rawParts[2] !== undefined ? rawParts.slice(2).join('').replace(/\D/g, '') : null;
+
+            // Handle typing without slashes (e.g. '22122004')
+            if (m === null && y === null) {
+                if (d.length > 2) {
+                    let rest = d.slice(2);
+                    d = d.slice(0, 2);
+                    if (rest.length > 2) {
+                        m = rest.slice(0, 2);
+                        y = rest.slice(2, 6);
+                    } else {
+                        m = rest;
+                    }
+                }
+            }
+
+            // Strict clamp Day (01 - 31)
+            if (d.length >= 2) {
+                d = d.slice(0, 2);
+                let numD = parseInt(d, 10);
+                if (numD > 31) d = '31';
+                else if (numD === 0) d = '01';
+            } else if (d.length === 1 && parseInt(d, 10) > 3) {
+                // A day starting with 4-9 is automatically day 04-09
+                d = '0' + d;
+            }
+
+            let result = d;
+
+            // Day slash separator
+            const shouldAddDaySlash = (d.length === 2) || s.includes('/') || (m !== null);
+            if (shouldAddDaySlash && d.length > 0) {
+                result += '/';
+            }
+
+            // Strict clamp Month (01 - 12)
+            if (m !== null) {
+                if (m.length >= 2) {
+                    m = m.slice(0, 2);
+                    let numM = parseInt(m, 10);
+                    if (numM > 12) m = '12';
+                    else if (numM === 0) m = '01';
+                } else if (m.length === 1 && parseInt(m, 10) > 1) {
+                    // A month starting with 2-9 is automatically month 02-09
+                    m = '0' + m;
+                }
+
+                result += m;
+
+                // Month slash separator
+                const shouldAddMonthSlash = (m.length === 2) || (rawParts.length >= 3) || (y !== null);
+                if (shouldAddMonthSlash && m.length > 0) {
+                    result += '/';
+                }
+            }
+
+            // Process Year (up to 4 digits)
+            if (y !== null && y.length > 0) {
+                y = y.slice(0, 4);
+                result += y;
+            }
+
+            return result;
+        };
+
         const initDobPickers = () => {
             const wrappers = $$('[data-dob-wrapper]');
             if (!wrappers.length) return;
@@ -1136,37 +1209,7 @@
                 input.addEventListener('input', () => {
                     if (isDeleting) return;
 
-                    let v = input.value;
-                    v = v.replace(/[-.]/g, '/').replace(/[^\d/]/g, '').replace(/\/+/g, '/');
-
-                    const parts = v.split('/');
-
-                    if (parts.length === 1) {
-                        const d = parts[0];
-                        if (d.length === 2) {
-                            v = d + '/';
-                        } else if (d.length > 2 && d.length <= 4) {
-                            v = d.slice(0, 2) + '/' + d.slice(2);
-                            if (d.length === 4) v += '/';
-                        } else if (d.length > 4) {
-                            v = d.slice(0, 2) + '/' + d.slice(2, 4) + '/' + d.slice(4, 8);
-                        }
-                    } else if (parts.length === 2) {
-                        const d = parts[0].slice(0, 2);
-                        const m = parts[1];
-                        if (m.length === 2) {
-                            v = d + '/' + m + '/';
-                        } else if (m.length > 2) {
-                            v = d + '/' + m.slice(0, 2) + '/' + m.slice(2, 6);
-                        } else {
-                            v = d + '/' + m;
-                        }
-                    } else if (parts.length >= 3) {
-                        const d = parts[0].slice(0, 2);
-                        const m = parts[1].slice(0, 2);
-                        const y = parts.slice(2).join('').replace(/\D/g, '').slice(0, 4);
-                        v = d + '/' + m + '/' + y;
-                    }
+                    const v = formatDobInput(input.value);
 
                     if (input.value !== v) {
                         input.value = v;
@@ -1187,12 +1230,15 @@
                 });
 
                 input.addEventListener('blur', () => {
-                    const v = input.value.trim();
-                    if (!v) return;
+                    const raw = input.value.trim();
+                    if (!raw) return;
+                    const v = formatDobInput(raw);
                     const parsed = parseDob(v);
                     if (parsed) {
                         input.value = parsed.formatted;
                         if (nativeInput) nativeInput.value = parsed.iso;
+                    } else {
+                        input.value = v;
                     }
                 });
             });
