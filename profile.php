@@ -51,9 +51,6 @@ $avatarUrl = avatar_url((string)($u['avatar'] ?? ''));
 $postRepo = new BlogForge\Repositories\PostRepository();
 $posts = $postRepo->forAuthor($profileId, 100, !$isOwnProfile, $profileHandle);
 
-$commentRepo = new BlogForge\Repositories\CommentRepository();
-$recentComments = $commentRepo->forAuthor($profileId, $profileHandle, 12);
-
 $roleLabel = ucfirst((string)($u['role'] ?? 'author'));
 
 require __DIR__ . '/partials/header.php';
@@ -81,8 +78,6 @@ require __DIR__ . '/partials/header.php';
                     <?php endif; ?>
                     <div class="flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500 mt-3">
                         <b class="text-gray-900 font-semibold"><?= count($posts) ?> <?= count($posts) === 1 ? 'story' : 'stories' ?></b>
-                        <span>·</span>
-                        <b class="text-gray-900 font-semibold"><?= count($recentComments) ?> <?= count($recentComments) === 1 ? 'response' : 'responses' ?></b>
                         <span>·</span>
                         <span>Role: <?= e($roleLabel) ?></span>
                     </div>
@@ -157,25 +152,6 @@ require __DIR__ . '/partials/header.php';
             </div>
         <?php endif; ?>
     </div>
-
-    <?php if (!empty($recentComments)): ?>
-        <div>
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Recent responses</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <?php foreach ($recentComments as $rc): ?>
-                    <a href="<?= e(app_url('article.php?id=' . urlencode((string)$rc['post_slug']))) ?>" class="block p-5 bg-white border border-[#e9e5df] rounded-2xl hover:border-orange-200 hover:shadow-sm transition group">
-                        <div class="flex items-center justify-between gap-2 text-xs text-gray-400 mb-2">
-                            <span class="font-semibold text-[#ff6b13] truncate group-hover:underline">On: <?= e((string)$rc['post_title']) ?></span>
-                            <span class="shrink-0"><?= e(format_date($rc['created_at'] ?? time())) ?></span>
-                        </div>
-                        <p class="text-sm text-gray-700 leading-relaxed line-clamp-3"><?= e((string)$rc['body']) ?></p>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    <?php endif; ?>
 </section>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
