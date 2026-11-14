@@ -37,7 +37,12 @@ try {
 
     check_rate_limit('auth_email', 15, 60);
 
+    $isMaintenance = ((string)get_setting('maintenance_mode', '0')) === '1';
+
     if ($action === 'register') {
+        if ($isMaintenance) {
+            json_response(['error' => 'Account registration is disabled while maintenance mode is active.'], 403);
+        }
         $user = Auth::registerEmail(
             (string)($d['first_name'] ?? ''),
             (string)($d['last_name'] ?? ''),
@@ -53,6 +58,14 @@ try {
             (string)($d['email'] ?? $d['username'] ?? ''),
             (string)($d['password'] ?? '')
         );
+
+        if ($isMaintenance && ($user['role'] ?? '') !== 'admin') {
+            if (isset($_SESSION)) {
+                session_unset();
+                session_destroy();
+            }
+            json_response(['error' => 'Access denied: You are not an administrator. Only administrators can sign in while maintenance mode is active.'], 403);
+        }
     }
 
     json_response(['ok' => true, 'user' => $user]);

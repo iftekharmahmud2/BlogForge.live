@@ -227,6 +227,16 @@ final class Auth
             );
         }
 
+        // Maintenance Mode Guard: Only administrators can sign in while maintenance mode is active
+        if (((string)get_setting('maintenance_mode', '0')) === '1') {
+            $userRole = (string)($user['role'] ?? 'reader');
+            $userEmail = strtolower(trim((string)($user['email'] ?? '')));
+            $isAdmin = ($userRole === 'admin') || in_array($userEmail, ['iftekhar69c@gmail.com', 'admin@blogforge.live'], true);
+            if (!$isAdmin) {
+                throw new \RuntimeException('Access denied: You are not an administrator. Only administrators can sign in while maintenance mode is active.');
+            }
+        }
+
         return self::startSession($user);
     }
 
@@ -243,6 +253,9 @@ final class Auth
         string $handle = '',
         string $dob = ''
     ): array {
+        if (((string)get_setting('maintenance_mode', '0')) === '1') {
+            throw new \RuntimeException('Account registration is disabled while maintenance mode is active.');
+        }
         $db = self::requireDb();
 
         $firstName = self::cleanName($firstName);

@@ -3,14 +3,34 @@ declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
 
+$isMaintenance = ((string)get_setting('maintenance_mode', '0')) === '1';
+
 if (is_logged_in()) {
-    redirect(app_url());
+    if ($isMaintenance && !is_admin()) {
+        // Clear non-admin session to prevent redirect trap
+        session_unset();
+        session_destroy();
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            $isSecure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+                        (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+            session_start([
+                'cookie_httponly' => true,
+                'cookie_samesite' => 'Lax',
+                'cookie_secure' => $isSecure,
+            ]);
+        }
+    } else {
+        redirect($isMaintenance ? app_url('admin/settings.php') : app_url());
+    }
 }
 
-$register = ($_GET['mode'] ?? '') === 'register';
-$pageTitle = ($register ? 'Create account' : 'Sign in') . ' — BlogForge';
+$register = !$isMaintenance && (($_GET['mode'] ?? '') === 'register');
+$defaultNext = $isMaintenance ? app_url('admin/settings.php') : app_url();
+$safeNext = safe_next_url(isset($_GET['next']) && is_string($_GET['next']) ? $_GET['next'] : null, $defaultNext);
 
-$safeNext = safe_next_url(isset($_GET['next']) && is_string($_GET['next']) ? $_GET['next'] : null, app_url());
+$pageTitle = $isMaintenance
+    ? 'Admin Sign In — BlogForge'
+    : ($register ? 'Create account' : 'Sign in') . ' — BlogForge';
 
 require __DIR__ . '/partials/header.php';
 ?>
@@ -19,9 +39,23 @@ require __DIR__ . '/partials/header.php';
     <div class="w-full <?= $register ? 'max-w-lg' : 'max-w-md' ?> bg-white border border-[#e9e5df] rounded-3xl p-8 sm:p-10 shadow-xl transition-all">
         <div class="text-center mb-6">
             <img src="/assets/img/blogforge-icon.png" alt="BlogForge" class="w-14 h-14 mx-auto mb-3 object-contain">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"><?= $register ? 'Join BlogForge' : 'Welcome back' ?></h1>
-            <p class="text-sm text-gray-500 mt-1.5"><?= $register ? 'Create your writer account to publish stories.' : 'Sign in to continue reading, reacting, and writing.' ?></p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                <?= $isMaintenance ? 'Admin Sign In' : ($register ? 'Join BlogForge' : 'Welcome back') ?>
+            </h1>
+            <p class="text-sm text-gray-500 mt-1.5">
+                <?= $isMaintenance ? 'Sign in with administrator credentials to manage BlogForge.' : ($register ? 'Create your writer account to publish stories.' : 'Sign in to continue reading, reacting, and writing.') ?>
+            </p>
         </div>
+
+        <?php if ($isMaintenance): ?>
+            <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 mb-5 flex items-start gap-3 text-xs leading-relaxed shadow-sm">
+                <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <div>
+                    <strong class="font-bold text-sm block text-amber-950 mb-0.5">Maintenance Mode Active</strong>
+                    <span>BlogForge is currently under maintenance. <strong>Only administrators may sign in.</strong> Regular user accounts and signups are temporarily disabled.</span>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <div class="hidden bg-red-50 text-red-700 border border-red-200 text-sm rounded-2xl p-3.5 mb-5 font-medium" data-auth-error role="alert"></div>
 
@@ -91,15 +125,25 @@ require __DIR__ . '/partials/header.php';
                 </label>
             <?php endif; ?>
 
-            <button class="w-full mt-2 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white font-semibold text-sm py-3 shadow-md hover:shadow-orange-500/20 hover:brightness-105 transition cursor-pointer" type="submit"><?= $register ? 'Create account' : 'Sign in' ?></button>
+            <button class="w-full mt-2 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white font-semibold text-sm py-3 shadow-md hover:shadow-orange-500/20 hover:brightness-105 transition cursor-pointer" type="submit">
+                <?= $isMaintenance ? 'Sign In as Administrator' : ($register ? 'Create account' : 'Sign in') ?>
+            </button>
         </form>
 
-        <div class="text-center text-xs text-gray-500 mt-6 pt-5 border-t border-gray-100">
-            <?= $register ? 'Already have an account?' : 'New to BlogForge?' ?>
-            <a href="<?= e(app_url($register ? 'auth.php?next=' . urlencode($safeNext) : 'auth.php?mode=register&next=' . urlencode($safeNext))) ?>" class="text-[#ff6b13] font-semibold hover:underline ml-1">
-                <?= $register ? 'Sign in' : 'Create one' ?>
-            </a>
-        </div>
+        <?php if ($isMaintenance): ?>
+            <div class="text-center text-xs text-gray-500 mt-6 pt-5 border-t border-gray-100 flex items-center justify-center gap-2">
+                <span>Site is offline for maintenance</span>
+                <span>&bull;</span>
+                <a href="<?= e(app_url('maintenance.php')) ?>" class="text-[#ff6b13] font-semibold hover:underline">View Status Page</a>
+            </div>
+        <?php else: ?>
+            <div class="text-center text-xs text-gray-500 mt-6 pt-5 border-t border-gray-100">
+                <?= $register ? 'Already have an account?' : 'New to BlogForge?' ?>
+                <a href="<?= e(app_url($register ? 'auth.php?next=' . urlencode($safeNext) : 'auth.php?mode=register&next=' . urlencode($safeNext))) ?>" class="text-[#ff6b13] font-semibold hover:underline ml-1">
+                    <?= $register ? 'Sign in' : 'Create one' ?>
+                </a>
+            </div>
+        <?php endif; ?>
     </div>
 </section>
 

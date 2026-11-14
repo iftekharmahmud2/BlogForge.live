@@ -31,7 +31,7 @@ $siteTitle = (string)get_setting('site_title', 'BlogForge');
 
         <!-- Admin Sign In Button -->
         <div class="mb-6">
-            <a href="<?= e(app_url('auth.php')) ?>" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white text-sm sm:text-base font-bold shadow-sm hover:shadow hover:brightness-105 transition cursor-pointer">
+            <a href="<?= e(app_url('auth.php?next=' . urlencode('/admin/settings.php'))) ?>" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white text-sm sm:text-base font-bold shadow-sm hover:shadow hover:brightness-105 transition cursor-pointer">
                 <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
                 <span>Admin Sign In</span>
             </a>
