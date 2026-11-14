@@ -94,19 +94,11 @@ require dirname(__DIR__) . '/partials/header.php';
                 </select>
             </div>
 
-            <div class="w-36">
-                <select name="status" class="w-full bg-[#fbfaf8] border border-[#e9e5df] rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-[#ff6b13] transition">
-                    <option value="">All Statuses</option>
-                    <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Active</option>
-                    <option value="banned" <?= $statusFilter === 'banned' ? 'selected' : '' ?>>Banned / Suspended</option>
-                </select>
-            </div>
-
             <button type="submit" class="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer">
                 Filter
             </button>
 
-            <?php if (!empty($search) || !empty($roleFilter) || !empty($statusFilter)): ?>
+            <?php if (!empty($search) || !empty($roleFilter)): ?>
                 <a href="<?= e(app_url('admin/users.php')) ?>" class="px-3 py-2 text-xs text-gray-500 hover:text-gray-900 transition">Clear</a>
             <?php endif; ?>
         </form>
@@ -119,7 +111,6 @@ require dirname(__DIR__) . '/partials/header.php';
                         <th class="py-3 px-4">User</th>
                         <th class="py-3 px-4">Email</th>
                         <th class="py-3 px-4">Role</th>
-                        <th class="py-3 px-4">Status</th>
                         <th class="py-3 px-4">Joined</th>
                         <th class="py-3 px-4 text-right">Actions</th>
                     </tr>
@@ -127,7 +118,7 @@ require dirname(__DIR__) . '/partials/header.php';
                 <tbody class="divide-y divide-gray-100">
                     <?php if (empty($users)): ?>
                         <tr>
-                            <td colspan="6" class="text-center text-gray-400 py-12">No registered users matched the filter criteria.</td>
+                            <td colspan="5" class="text-center text-gray-400 py-12">No registered users matched the filter criteria.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($users as $u): ?>
@@ -146,6 +137,8 @@ require dirname(__DIR__) . '/partials/header.php';
                                                 <b class="text-gray-900 font-semibold truncate block"><?= e((string)$u['name']) ?></b>
                                                 <?php if ($isSelf): ?>
                                                     <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-orange-100 text-[#ff6b13] uppercase tracking-wider">You</span>
+                                                <?php elseif ($uStatus === 'banned'): ?>
+                                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-100 text-red-700 uppercase tracking-wider">Suspended</span>
                                                 <?php endif; ?>
                                             </div>
                                             <span class="text-xs text-gray-400 block truncate">@<?= e((string)($u['handle'] ?? 'user')) ?></span>
@@ -171,11 +164,6 @@ require dirname(__DIR__) . '/partials/header.php';
                                             </select>
                                         </form>
                                     <?php endif; ?>
-                                </td>
-                                <td class="py-3.5 px-4">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold <?= $uStatus === 'banned' ? 'bg-red-100 text-red-800' : 'bg-emerald-50 text-emerald-700' ?>">
-                                        <?= $uStatus === 'banned' ? 'Banned' : 'Active' ?>
-                                    </span>
                                 </td>
                                 <td class="py-3.5 px-4 text-xs text-gray-500 whitespace-nowrap">
                                     <?= e(format_date($u['created_at'] ?? time())) ?>
