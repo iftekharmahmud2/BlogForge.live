@@ -28,12 +28,19 @@ $siteTitle = (string)get_setting('site_title', 'BlogForge');
         <span class="text-xs font-bold uppercase tracking-widest text-[#ff6b13] block mb-2">Scheduled Maintenance</span>
         <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight mb-3"><?= e($siteTitle) ?> is taking a quick break</h1>
         <p class="text-sm text-gray-600 leading-relaxed mb-6">We are currently performing routine upgrades and system maintenance to improve your publishing experience. We'll be back online in just a few minutes.</p>
+
+        <!-- Admin Sign In Button -->
+        <div class="mb-6">
+            <a href="<?= e(app_url('auth.php')) ?>" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#ff6b13] to-[#ff9a3c] text-white text-sm sm:text-base font-bold shadow-sm hover:shadow hover:brightness-105 transition cursor-pointer">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                <span>Admin Sign In</span>
+            </a>
+        </div>
+
         <div class="pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-400">
             <span>&copy; <?= date('Y') ?> <?= e($siteTitle) ?></span>
             <span>&bull;</span>
             <a href="mailto:support@blogforge.live" class="hover:text-gray-600 transition">Contact Support</a>
-            <span>&bull;</span>
-            <a href="<?= e(app_url('auth.php')) ?>" class="hover:text-gray-600 transition font-medium">Admin Sign In</a>
         </div>
     </div>
 </body>
