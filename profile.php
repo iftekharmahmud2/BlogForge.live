@@ -71,9 +71,9 @@ require __DIR__ . '/partials/header.php';
                 <?php endif; ?>
                 <div>
                     <h1 class="text-2xl sm:text-4xl font-extrabold text-gray-900 tracking-tight"><?= e($profileName) ?></h1>
-                    <p class="text-sm text-gray-500 mt-1">
-                        <?= $profileHandle !== '' ? '@' . e($profileHandle) . ' · ' : '' ?><?= count($posts) > 0 ? 'Author on BlogForge' : 'Community Member on BlogForge' ?>
-                    </p>
+                    <?php if ($profileHandle !== ''): ?>
+                        <p class="text-sm text-gray-500 mt-1">@<?= e($profileHandle) ?></p>
+                    <?php endif; ?>
                     <?php if ($bio !== ''): ?>
                         <p class="text-sm text-gray-700 mt-2.5 max-w-xl leading-relaxed"><?= e($bio) ?></p>
                     <?php elseif ($isOwnProfile): ?>
