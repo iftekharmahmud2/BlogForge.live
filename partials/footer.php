@@ -1,3 +1,9 @@
+<?php
+if (!defined('BLOGFORGE_BOOTSTRAPPED')) {
+    http_response_code(404);
+    exit('Not found');
+}
+?>
 </main>
 <footer class="border-t border-gray-200 bg-[#11151b] text-neutral-300 pt-16 pb-12 mt-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

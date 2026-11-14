@@ -1,4 +1,8 @@
 <?php
+if (!defined('BLOGFORGE_BOOTSTRAPPED')) {
+    http_response_code(404);
+    exit('Not found');
+}
 $user = current_user();
 $pageTitle = $pageTitle ?? 'BlogForge — Ideas into impact.';
 $currentScript = basename($_SERVER['SCRIPT_NAME'] ?? 'index.php');

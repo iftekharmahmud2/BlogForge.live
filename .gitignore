@@ -9,12 +9,15 @@
 *.pem
 *.key
 *.cert
+config/admins.json
+!config/admins.json.example
 
 # Logs and storage
 *.log
 /storage/
 /logs/
 /uploads/*
+!/uploads/.htaccess
 !/uploads/avatars/
 /uploads/avatars/*
 !/uploads/avatars/.gitkeep

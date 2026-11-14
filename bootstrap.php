@@ -57,6 +57,8 @@ if ($appEnv === 'production') {
 
 // Global Security Headers (web only)
 if (PHP_SAPI !== 'cli' && !headers_sent()) {
+    header_remove('X-Powered-By');
+    @ini_set('expose_php', '0');
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('X-XSS-Protection: 1; mode=block');

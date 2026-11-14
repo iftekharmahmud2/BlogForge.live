@@ -2,11 +2,18 @@
 Options -Indexes
 ServerSignature Off
 
-# Deny direct access to sensitive files and folders
-<FilesMatch "^(\.env.*|\.git.*|\.htaccess|composer\.(json|lock)|package(-lock)?\.json|tailwind\.config\.js|Dockerfile|\.nvmrc|\.gitattributes|\.gitignore|README\.md|bootstrap\.php|router\.php|.*\.bak|.*\.backup|.*\.orig|.*\.save|.*\.log|.*\.sql|.*\.sh|.*\.bat)$">
+# Prevent PHP version disclosure
+<IfModule mod_headers.c>
+    Header unset X-Powered-By
+</IfModule>
+
+# Block direct web access to sensitive application directories
+RedirectMatch 403 ^/(vendor|src|scripts|partials|config|node_modules|storage|logs)(/|$)
+
+# Deny direct access to sensitive configuration, secrets, documentation and backup files
+<FilesMatch "(?i)^(\.env.*|\.git.*|\.htaccess|.*\.md|.*\.json|.*\.lock|.*\.config\.js|Dockerfile|\.nvmrc|\.gitattributes|\.gitignore|bootstrap\.php|router\.php|.*\.bak|.*\.backup|.*\.orig|.*\.save|.*\.log|.*\.sql|.*\.sh|.*\.bat)$">
     Require all denied
 </FilesMatch>
-RedirectMatch 403 ^/(vendor|src|scripts|partials|node_modules|storage|logs)(/|$)
 
 RewriteEngine On
 RewriteBase /
