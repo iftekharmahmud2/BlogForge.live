@@ -33,43 +33,43 @@ require __DIR__ . '/partials/header.php';
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_78%_50%,rgba(255,107,19,0.22),rgba(255,138,51,0.06)_42%,transparent_72%)] pointer-events-none"></div>
             <div class="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:28px_28px] opacity-50 [mask-image:radial-gradient(ellipse_75%_70%_at_65%_50%,#000_40%,transparent_100%)] pointer-events-none"></div>
 
-            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 items-center gap-10 lg:gap-6 px-7 py-12 sm:px-12 sm:py-16 lg:px-16 lg:py-20">
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 items-center gap-6 sm:gap-8 lg:gap-6 px-6 py-8 sm:px-12 sm:py-16 lg:px-16 lg:py-20">
                 
-                <!-- Left Column: Editorial Headline & Clear Actions -->
-                <div class="lg:col-span-7 flex flex-col items-start text-left">
-                    <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-[#ff9a3c] mb-6">
+                <!-- Left Column: Editorial Headline & Clear Actions (order-2 on mobile, order-1 on desktop) -->
+                <div class="lg:col-span-7 flex flex-col items-start text-left order-2 lg:order-1">
+                    <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-[#ff9a3c] mb-4 sm:mb-6">
                         <span class="w-1.5 h-1.5 rounded-full bg-[#ff6b13] animate-pulse"></span>
                         BlogForge.live · Open Publishing
                     </span>
 
-                    <h1 class="text-4xl sm:text-6xl lg:text-[4.5rem] font-extrabold tracking-tight leading-[1.03] text-white mb-6">
+                    <h1 class="text-3xl sm:text-6xl lg:text-[4.5rem] font-extrabold tracking-tight leading-[1.05] sm:leading-[1.03] text-white mb-4 sm:mb-6">
                         Ideas<br>
                         into <span class="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-[#ff7b22] via-[#ff9a3c] to-[#ffd08a] pr-2">Impact.</span>
                     </h1>
 
-                    <p class="text-base sm:text-lg lg:text-xl text-neutral-300 max-w-xl leading-relaxed mb-9 font-normal">
+                    <p class="text-sm sm:text-lg lg:text-xl text-neutral-300 max-w-xl leading-relaxed mb-6 sm:mb-9 font-normal">
                         A home for curious minds, bold ideas, and meaningful stories. Read deeply, write visually, and share your voice with a growing community of thinkers.
                     </p>
 
                     <!-- Action Row -->
-                    <div class="flex flex-wrap items-center gap-3.5 sm:gap-4 mb-9">
+                    <div class="flex flex-wrap items-center gap-3 sm:gap-4 mb-6 sm:mb-9">
                         <?php if ($user): ?>
-                            <a class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff6b13] to-[#ff9233] text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-full shadow-[0_12px_32px_-8px_rgba(255,107,19,0.6)] hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200" href="<?= e(app_url('explore.php')) ?>">
+                            <a class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff6b13] to-[#ff9233] text-white font-semibold text-sm sm:text-base px-6 sm:px-7 py-3 sm:py-3.5 rounded-full shadow-[0_12px_32px_-8px_rgba(255,107,19,0.6)] hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200" href="<?= e(app_url('explore.php')) ?>">
                                 <span>Start reading</span>
                                 <span aria-hidden="true">→</span>
                             </a>
-                            <a class="inline-flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/15 font-semibold text-sm sm:text-base px-6 py-3.5 rounded-full backdrop-blur-sm transition-all" href="<?= e(app_url('write.php')) ?>">
+                            <a class="inline-flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/15 font-semibold text-sm sm:text-base px-5 sm:px-6 py-3 sm:py-3.5 rounded-full backdrop-blur-sm transition-all" href="<?= e(app_url('write.php')) ?>">
                                 Write a story
                             </a>
                             <a class="inline-flex items-center justify-center text-neutral-200 hover:text-[#ff9a3c] font-medium text-sm sm:text-base px-3 py-2 transition" href="<?= e(app_url('drafts.php')) ?>">
                                 My Drafts
                             </a>
                         <?php else: ?>
-                            <a class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff6b13] to-[#ff9233] text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-full shadow-[0_12px_32px_-8px_rgba(255,107,19,0.6)] hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200" href="<?= e(app_url('auth.php?mode=register')) ?>">
+                            <a class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff6b13] to-[#ff9233] text-white font-semibold text-sm sm:text-base px-6 sm:px-7 py-3 sm:py-3.5 rounded-full shadow-[0_12px_32px_-8px_rgba(255,107,19,0.6)] hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200" href="<?= e(app_url('auth.php?mode=register')) ?>">
                                 <span>Get started</span>
                                 <span aria-hidden="true">→</span>
                             </a>
-                            <a class="inline-flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/15 font-semibold text-sm sm:text-base px-6 py-3.5 rounded-full backdrop-blur-sm transition-all" href="<?= e(app_url('write.php')) ?>">
+                            <a class="inline-flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/15 font-semibold text-sm sm:text-base px-5 sm:px-6 py-3 sm:py-3.5 rounded-full backdrop-blur-sm transition-all" href="<?= e(app_url('write.php')) ?>">
                                 Write a story
                             </a>
                             <a class="inline-flex items-center justify-center text-neutral-200 hover:text-[#ff9a3c] font-medium text-sm sm:text-base px-3 py-2 transition" href="<?= e(app_url('explore.php')) ?>">
@@ -79,20 +79,20 @@ require __DIR__ . '/partials/header.php';
                     </div>
 
                     <!-- Crisp High-Contrast Trust Strip -->
-                    <div class="flex flex-wrap items-center gap-x-6 gap-y-2.5 pt-6 border-t border-white/10 w-full max-w-lg text-xs sm:text-sm text-neutral-300">
-                        <span class="inline-flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-x-5 sm:gap-x-6 gap-y-2 pt-5 sm:pt-6 border-t border-white/10 w-full max-w-lg text-xs sm:text-sm text-neutral-300">
+                        <span class="inline-flex items-center gap-1.5 sm:gap-2">
                             <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                             </span>
                             100% Free
                         </span>
-                        <span class="inline-flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 sm:gap-2">
                             <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                             </span>
                             Zero Paywalls
                         </span>
-                        <span class="inline-flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 sm:gap-2">
                             <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                             </span>
@@ -101,16 +101,16 @@ require __DIR__ . '/partials/header.php';
                     </div>
                 </div>
 
-                <!-- Right Column: Studio-Lit 3D Signature Emblem -->
-                <div class="lg:col-span-5 relative flex flex-col items-center justify-center lg:justify-end">
+                <!-- Right Column: Studio-Lit 3D Signature Emblem (order-1 on mobile, order-2 on desktop) -->
+                <div class="lg:col-span-5 relative flex flex-col items-center justify-center lg:justify-end order-1 lg:order-2">
                     <div class="relative group flex items-center justify-center">
                         <!-- Focused Backlight Glow -->
-                        <div class="absolute inset-4 rounded-full bg-gradient-to-tr from-[#ff6b13]/30 via-amber-500/15 to-transparent blur-3xl group-hover:scale-110 transition-transform duration-700 pointer-events-none"></div>
-                        <img src="/assets/img/blogforge-icon.png" alt="BlogForge 3D Emblem" class="relative w-56 sm:w-72 lg:w-[23rem] max-w-full object-contain drop-shadow-[0_28px_45px_rgba(0,0,0,0.85)] select-none group-hover:scale-[1.03] transition-transform duration-500">
+                        <div class="absolute inset-1 sm:inset-4 rounded-full bg-gradient-to-tr from-[#ff6b13]/30 via-amber-500/15 to-transparent blur-xl sm:blur-3xl group-hover:scale-110 transition-transform duration-700 pointer-events-none"></div>
+                        <img src="/assets/img/blogforge-icon.png" alt="BlogForge 3D Emblem" class="relative w-24 sm:w-36 md:w-52 lg:w-[23rem] max-w-full object-contain drop-shadow-[0_16px_30px_rgba(0,0,0,0.85)] sm:drop-shadow-[0_28px_45px_rgba(0,0,0,0.85)] select-none group-hover:scale-[1.03] transition-transform duration-500">
                     </div>
 
-                    <!-- Clean Floating Glass Tag Under Emblem -->
-                    <div class="mt-6 inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.06] border border-white/10 backdrop-blur-md text-xs text-neutral-200">
+                    <!-- Clean Floating Glass Tag Under Emblem (hidden on small mobile to keep hero punchy, visible sm and up) -->
+                    <div class="mt-3 sm:mt-6 hidden sm:inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.06] border border-white/10 backdrop-blur-md text-xs text-neutral-200">
                         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                         <span><strong class="text-white font-semibold">15,000+</strong> stories · <strong class="text-white font-semibold">250K+</strong> monthly readers</span>
                     </div>
